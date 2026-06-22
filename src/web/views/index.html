@@ -134,27 +134,6 @@
       color: var(--muted);
       line-height: 1.5;
     }
-    .status-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-      text-align: left;
-    }
-    .status-card .info h2 {
-      font-size: 1.3rem;
-      color: var(--accent-2);
-      margin-bottom: 0.25rem;
-    }
-    .status-card .info .status {
-      font-size: 1rem;
-      color: var(--muted);
-    }
-    .status-card .players {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
     .section-card {
       text-align: left;
     }
@@ -241,13 +220,6 @@
         <small id="feat-players-desc">Spieler, Plattform und Spielzeit übersichtlich.</small>
       </div>
     </div>
-    <div class="card status-card">
-      <div class="info">
-        <h2 id="public-status-title">Server Status</h2>
-        <div class="status" id="public-status">Loading...</div>
-      </div>
-      <div class="players" id="public-players">-/-</div>
-    </div>
     <div class="grid">
       <div class="card section-card">
         <h2 id="cmd-list-title">Befehle</h2>
@@ -303,7 +275,6 @@
       document.getElementById('feat-shop-desc').textContent = T.feat_shop_desc || 'Items, Pals und Eier mit Coins verkaufen.';
       document.getElementById('feat-players-title').textContent = T.players || 'Spieler';
       document.getElementById('feat-players-desc').textContent = T.feat_players_desc || 'Spieler, Plattform und Spielzeit übersichtlich.';
-      document.getElementById('public-status-title').textContent = T.public_status_title || 'Server Status';
       document.getElementById('cmd-list-title').textContent = T.cmd_list_title || 'Befehle';
       document.getElementById('faq-title').textContent = T.faq_title || 'FAQ';
       document.getElementById('faq-link').textContent = T.faq_link || 'Wie verknüpfe ich meinen Account?';
@@ -313,31 +284,11 @@
       document.getElementById('faq-admin').textContent = T.faq_admin || 'Wer ist Admin?';
       document.getElementById('faq-admin-answer').textContent = T.faq_admin_answer || 'Discord-Administratoren und der Global Admin.';
     }
-    async function loadPublicStatus() {
-      try {
-        const res = await fetch('/api/public/status');
-        const data = await res.json();
-        const statusBox = document.getElementById('public-status');
-        const playersBox = document.getElementById('public-players');
-        if (data.error) {
-          statusBox.textContent = T.public_status_no_server || 'Kein öffentlicher Server konfiguriert.';
-          playersBox.textContent = '-';
-          return;
-        }
-        const statusText = data.isOnline ? (T.public_status_online || '🟢 Online') : (T.public_status_offline || '🔴 Offline');
-        statusBox.innerHTML = `<strong>${data.name || 'Server'}</strong> • ${statusText}`;
-        playersBox.textContent = `${data.currentPlayers}/${data.maxPlayers}`;
-      } catch (err) {
-        document.getElementById('public-status').textContent = T.public_status_no_server || 'Kein öffentlicher Server konfiguriert.';
-        document.getElementById('public-players').textContent = '-';
-      }
-    }
     async function setLang(lang) {
       await fetch('/api/lang', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }) });
       loadLang();
     }
     loadLang();
-    loadPublicStatus();
   </script>
 </body>
 </html>
