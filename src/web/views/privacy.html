@@ -31,6 +31,27 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+    .lang-switch {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+    .lang-switch button {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.9rem;
+      border-radius: 20px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .lang-switch button:hover { background: rgba(88, 101, 242, 0.2); }
+    .lang-switch button.active { background: var(--accent); border-color: var(--accent); }
     .container {
       max-width: 800px;
       margin: 0 auto;
@@ -46,39 +67,67 @@
     a { color: var(--accent-2); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .footer { margin-top: 2rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
-    ul { color: var(--muted); margin-left: 1.5rem; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Datenschutzerklärung</h1>
-    <p>Letzte Aktualisierung: 22. Juni 2026</p>
-
-    <h2>1. Verantwortlicher</h2>
-    <p>PalCord wird betrieben von RL-Dev.de.</p>
-
-    <h2>2. Welche Daten werden verarbeitet?</h2>
-    <p>Bei der Nutzung von PalCord werden folgende Daten verarbeitet:</p>
-    <ul>
-      <li>Discord-Profildaten (Discord-ID, Name, Avatar, Server-Mitgliedschaften) für Login und Dashboard-Zugriff</li>
-      <li>Palworld-Spielerdaten (UserId, Ingame-Name, Level, Spielzeit, Coins) aus dem Server-RCON/REST-API</li>
-      <li>Server-Konfigurationen (RCON-Daten, Channel-IDs, Rollen-IDs) für die Bot-Funktionen</li>
-      <li>Logs und technische Daten für Fehleranalyse und Copyright-Prüfung</li>
-    </ul>
-
-    <h2>3. Speicherung</h2>
-    <p>Die Daten werden lokal in einer SQLite-Datenbank auf dem Server des Betreibers gespeichert. Es werden keine Daten an Dritte weitergegeben, außer an die konfigurierten Palworld-Server per RCON/REST-API.</p>
-
-    <h2>4. Rechte</h2>
-    <p>Benutzer können jederzeit die Löschung ihrer Daten beim Server-Betreiber beantragen.</p>
-
-    <h2>5. Cookies</h2>
-    <p>Das Dashboard verwendet Session-Cookies für den Login und ein Sprach-Cookie für die Spracheinstellung.</p>
-
-    <h2>6. Kontakt</h2>
-    <p>Bei Fragen: RL-Dev.de</p>
-
-    <div class="footer"><a href="/">Zurück zur Startseite</a></div>
+  <div class="lang-switch">
+    <button data-lang="de" onclick="setLang('de')">DE</button>
+    <button data-lang="en" onclick="setLang('en')">EN</button>
   </div>
+  <div class="container">
+    <h1 id="title">Datenschutzerklärung</h1>
+    <p id="updated">Letzte Aktualisierung: 22. Juni 2026</p>
+
+    <h2 id="controller-title">1. Verantwortlicher</h2>
+    <p id="controller-text">PalCord wird betrieben von RL-Dev.de.</p>
+
+    <h2 id="data-title">2. Welche Daten werden verarbeitet?</h2>
+    <p id="data-text">Bei der Nutzung von PalCord werden folgende Daten verarbeitet: Discord-Profildaten, Palworld-Spielerdaten, Server-Konfigurationen und technische Logs.</p>
+
+    <h2 id="storage-title">3. Speicherung</h2>
+    <p id="storage-text">Die Daten werden lokal in einer SQLite-Datenbank auf dem Server des Betreibers gespeichert. Es werden keine Daten an Dritte weitergegeben, außer an die konfigurierten Palworld-Server per RCON/REST-API.</p>
+
+    <h2 id="rights-title">4. Rechte</h2>
+    <p id="rights-text">Benutzer können jederzeit die Löschung ihrer Daten beim Server-Betreiber beantragen.</p>
+
+    <h2 id="cookies-title">5. Cookies</h2>
+    <p id="cookies-text">Das Dashboard verwendet Session-Cookies für den Login und ein Sprach-Cookie für die Spracheinstellung.</p>
+
+    <h2 id="contact-title">6. Kontakt</h2>
+    <p>RL-Dev.de</p>
+
+    <div class="footer"><a href="/" id="back">Zurück zur Startseite</a></div>
+  </div>
+  <script>
+    let T = {};
+    async function loadLang() {
+      const res = await fetch('/api/lang');
+      const data = await res.json();
+      T = data.translations;
+      document.querySelectorAll('.lang-switch button').forEach(b => b.classList.toggle('active', b.dataset.lang === data.lang));
+      document.documentElement.lang = data.lang;
+      applyText();
+    }
+    function applyText() {
+      document.getElementById('title').textContent = T.privacy_title || 'Datenschutzerklärung';
+      document.getElementById('updated').textContent = (T.terms_updated || 'Letzte Aktualisierung') + ': ' + (T.terms_date || '22. Juni 2026');
+      document.getElementById('controller-title').textContent = T.privacy_controller || '1. Verantwortlicher';
+      document.getElementById('controller-text').textContent = T.privacy_controller_text || 'PalCord wird betrieben von RL-Dev.de.';
+      document.getElementById('data-title').textContent = T.privacy_data || '2. Welche Daten werden verarbeitet?';
+      document.getElementById('data-text').textContent = T.privacy_data_text || 'Bei der Nutzung von PalCord werden folgende Daten verarbeitet: Discord-Profildaten, Palworld-Spielerdaten, Server-Konfigurationen und technische Logs.';
+      document.getElementById('storage-title').textContent = T.privacy_storage || '3. Speicherung';
+      document.getElementById('storage-text').textContent = T.privacy_storage_text || 'Die Daten werden lokal in einer SQLite-Datenbank auf dem Server des Betreibers gespeichert.';
+      document.getElementById('rights-title').textContent = T.privacy_rights || '4. Rechte';
+      document.getElementById('rights-text').textContent = T.privacy_rights_text || 'Benutzer können jederzeit die Löschung ihrer Daten beim Server-Betreiber beantragen.';
+      document.getElementById('cookies-title').textContent = T.privacy_cookies || '5. Cookies';
+      document.getElementById('cookies-text').textContent = T.privacy_cookies_text || 'Das Dashboard verwendet Session-Cookies für den Login und ein Sprach-Cookie.';
+      document.getElementById('back').textContent = T.back_to_home || 'Zurück zur Startseite';
+    }
+    async function setLang(lang) {
+      await fetch('/api/lang', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }) });
+      loadLang();
+    }
+    loadLang();
+  </script>
 </body>
 </html>

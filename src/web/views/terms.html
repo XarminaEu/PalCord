@@ -31,6 +31,27 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+    .lang-switch {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+    .lang-switch button {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.9rem;
+      border-radius: 20px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .lang-switch button:hover { background: rgba(88, 101, 242, 0.2); }
+    .lang-switch button.active { background: var(--accent); border-color: var(--accent); }
     .container {
       max-width: 800px;
       margin: 0 auto;
@@ -49,29 +70,65 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Nutzungsbedingungen</h1>
-    <p>Letzte Aktualisierung: 22. Juni 2026</p>
-
-    <h2>1. Geltungsbereich</h2>
-    <p>Diese Nutzungsbedingungen gelten für die Nutzung von PalCord, einem Discord-Bot und Web-Dashboard für Palworld-Server.</p>
-
-    <h2>2. Lizenz</h2>
-    <p>PalCord ist urheberrechtlich geschützt (Copyright 2026 RL-Dev.de). Die Nutzung ist nur für den internen oder persönlichen Gebrauch gestattet. Veränderungen, Weiterentwicklung, Verbreitung und erneute Veröffentlichung sind ausdrücklich untersagt.</p>
-
-    <h2>3. Verantwortung</h2>
-    <p>Der Betreiber ist selbst für die Konfiguration seiner Server, Discord-Berechtigungen und Ingame-Aktionen verantwortlich. PalCord stellt lediglich Werkzeuge zur Verfügung.</p>
-
-    <h2>4. Datenschutz</h2>
-    <p>Informationen zur Datenverarbeitung findest du in der <a href="/privacy">Datenschutzerklärung</a>.</p>
-
-    <h2>5. Haftung</h2>
-    <p>Die Nutzung erfolgt auf eigenes Risiko. RL-Dev.de haftet nicht für Schäden, die durch die Nutzung der Software entstehen, soweit gesetzlich zulässig.</p>
-
-    <h2>6. Kontakt</h2>
-    <p>Bei Fragen: RL-Dev.de</p>
-
-    <div class="footer"><a href="/">Zurück zur Startseite</a></div>
+  <div class="lang-switch">
+    <button data-lang="de" onclick="setLang('de')">DE</button>
+    <button data-lang="en" onclick="setLang('en')">EN</button>
   </div>
+  <div class="container">
+    <h1 id="title">Nutzungsbedingungen</h1>
+    <p id="updated">Letzte Aktualisierung: 22. Juni 2026</p>
+
+    <h2 id="scope-title">1. Geltungsbereich</h2>
+    <p id="scope-text">Diese Nutzungsbedingungen gelten für die Nutzung von PalCord, einem Discord-Bot und Web-Dashboard für Palworld-Server.</p>
+
+    <h2 id="license-title">2. Lizenz</h2>
+    <p id="license-text">PalCord ist urheberrechtlich geschützt (Copyright 2026 RL-Dev.de). Die Nutzung ist nur für den internen oder persönlichen Gebrauch gestattet. Veränderungen, Weiterentwicklung, Verbreitung und erneute Veröffentlichung sind ausdrücklich untersagt.</p>
+
+    <h2 id="responsibility-title">3. Verantwortung</h2>
+    <p id="responsibility-text">Der Betreiber ist selbst für die Konfiguration seiner Server, Discord-Berechtigungen und Ingame-Aktionen verantwortlich. PalCord stellt lediglich Werkzeuge zur Verfügung.</p>
+
+    <h2 id="privacy-title">4. Datenschutz</h2>
+    <p id="privacy-text">Informationen zur Datenverarbeitung findest du in der <a href="/privacy">Datenschutzerklärung</a>.</p>
+
+    <h2 id="liability-title">5. Haftung</h2>
+    <p id="liability-text">Die Nutzung erfolgt auf eigenes Risiko. RL-Dev.de haftet nicht für Schäden, die durch die Nutzung der Software entstehen, soweit gesetzlich zulässig.</p>
+
+    <h2 id="contact-title">6. Kontakt</h2>
+    <p>RL-Dev.de</p>
+
+    <div class="footer"><a href="/" id="back">Zurück zur Startseite</a></div>
+  </div>
+  <script>
+    let T = {};
+    async function loadLang() {
+      const res = await fetch('/api/lang');
+      const data = await res.json();
+      T = data.translations;
+      document.querySelectorAll('.lang-switch button').forEach(b => b.classList.toggle('active', b.dataset.lang === data.lang));
+      document.documentElement.lang = data.lang;
+      applyText();
+    }
+    function applyText() {
+      document.getElementById('title').textContent = T.terms_title || 'Nutzungsbedingungen';
+      document.getElementById('updated').textContent = (T.terms_updated || 'Letzte Aktualisierung') + ': ' + (T.terms_date || '22. Juni 2026');
+      document.getElementById('scope-title').textContent = T.terms_scope || '1. Geltungsbereich';
+      document.getElementById('scope-text').textContent = T.terms_scope_text || 'Diese Nutzungsbedingungen gelten für die Nutzung von PalCord, einem Discord-Bot und Web-Dashboard für Palworld-Server.';
+      document.getElementById('license-title').textContent = T.terms_license || '2. Lizenz';
+      document.getElementById('license-text').textContent = T.terms_license_text || 'PalCord ist urheberrechtlich geschützt. Die Nutzung ist nur für den internen oder persönlichen Gebrauch gestattet.';
+      document.getElementById('responsibility-title').textContent = T.terms_responsibility || '3. Verantwortung';
+      document.getElementById('responsibility-text').textContent = T.terms_responsibility_text || 'Der Betreiber ist selbst für die Konfiguration seiner Server verantwortlich.';
+      document.getElementById('privacy-title').textContent = T.terms_privacy || '4. Datenschutz';
+      document.getElementById('privacy-text').innerHTML = T.terms_privacy_text || 'Informationen zur Datenverarbeitung findest du in der <a href="/privacy">Datenschutzerklärung</a>.';
+      document.getElementById('liability-title').textContent = T.terms_liability || '5. Haftung';
+      document.getElementById('liability-text').textContent = T.terms_liability_text || 'Die Nutzung erfolgt auf eigenes Risiko.';
+      document.getElementById('contact-title').textContent = T.terms_contact || '6. Kontakt';
+      document.getElementById('back').textContent = T.back_to_home || 'Zurück zur Startseite';
+    }
+    async function setLang(lang) {
+      await fetch('/api/lang', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }) });
+      loadLang();
+    }
+    loadLang();
+  </script>
 </body>
 </html>
