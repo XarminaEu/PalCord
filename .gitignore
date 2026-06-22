@@ -42,3 +42,4 @@ yarn-error.log*
 CascadeProjects/
 token.tok
 plan.md
+.git-credentials
