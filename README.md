@@ -34,3 +34,9 @@ Open the dashboard at `http://your-domain:5996/`.
 ## Important Notice
 
 `.env` contains placeholders. **Before production use**, replace `DISCORD_CLIENT_SECRET`, `DISCORD_TOKEN`, and `SESSION_SECRET` with real values.
+
+## License
+
+This project is licensed under the **PalCord Proprietary License**. See [LICENSE](LICENSE) for details.
+
+**Summary:** You may use the Software for personal or internal purposes only. Modification, further development, redistribution, sublicensing, and further publication are **strictly prohibited**.
