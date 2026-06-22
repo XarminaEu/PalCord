@@ -159,6 +159,40 @@ router.delete('/api/guilds/:guildId/bases/:id', ensureAuthenticated, (req, res) 
 
 const SETTINGS_KEYS = ['welcome_channel_id', 'auto_role_id', 'notification_channel_id', 'daily_reminder_channel_id', 'rules'];
 
+router.get('/api/guilds/:guildId/channels', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const guild = discordClient.guilds.cache.get(guildId);
+    if (!guild) return res.json([]);
+    const channels = guild.channels.cache
+      .filter(c => c.isTextBased())
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(c => ({ id: c.id, name: c.name }));
+    res.json(channels);
+  } catch (err) {
+    logger.error(`Channels error: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/api/guilds/:guildId/roles', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const guild = discordClient.guilds.cache.get(guildId);
+    if (!guild) return res.json([]);
+    const roles = guild.roles.cache
+      .filter(r => !r.managed && r.name !== '@everyone')
+      .sort((a, b) => b.position - a.position)
+      .map(r => ({ id: r.id, name: r.name, color: r.color }));
+    res.json(roles);
+  } catch (err) {
+    logger.error(`Roles error: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/api/guilds/:guildId/settings', ensureAuthenticated, (req, res) => {
   const { guildId } = req.params;
   if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
