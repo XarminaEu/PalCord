@@ -31,6 +31,21 @@ Open the dashboard at `http://your-domain:5996/`.
 - [Installation Guide](install.md) - Step-by-step setup instructions.
 - [Environment Variables](.env.example) - Example configuration.
 
+## Discord Application Setup
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
+2. Select your application.
+3. Go to **OAuth2 → General** and add the redirect URL:
+   ```
+   http://your-domain:5996/auth/discord/callback
+   ```
+4. Copy `DISCORD_CLIENT_SECRET` into your `.env` file.
+5. Under **General Information**, set:
+   - **Terms of Service URL**: `https://palcord.run.place/terms`
+   - **Privacy Policy URL**: `https://palcord.run.place/privacy`
+   - **Interactions Endpoint URL**: leave empty (PalCord uses the Gateway bot)
+   - **Linked Roles Verification URL**: leave empty (not used)
+
 ## Important Notice
 
 `.env` contains placeholders. **Before production use**, replace `DISCORD_CLIENT_SECRET`, `DISCORD_TOKEN`, and `SESSION_SECRET` with real values.

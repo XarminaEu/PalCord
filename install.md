@@ -71,16 +71,21 @@ Visit `http://your-domain:5996/` in your browser.
 
 Login with Discord. You will only see Discord guilds where you are a member and where the bot is also present.
 
-## Discord OAuth Setup
+## Discord Application Setup
 
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
 2. Select your application.
-3. Go to OAuth2 → General.
+3. Go to **OAuth2 → General**.
 4. Add your redirect URL:
    ```
    http://your-domain:5996/auth/discord/callback
    ```
 5. Copy the `DISCORD_CLIENT_SECRET` into your `.env` file.
+6. Under **General Information**, set:
+   - **Terms of Service URL**: `https://palcord.run.place/terms`
+   - **Privacy Policy URL**: `https://palcord.run.place/privacy`
+   - **Interactions Endpoint URL**: leave empty (PalCord uses the Gateway bot)
+   - **Linked Roles Verification URL**: leave empty (not used)
 
 ## Bot Permissions
 

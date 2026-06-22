@@ -51,6 +51,14 @@ router.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
+router.get('/terms', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'terms.html'));
+});
+
+router.get('/privacy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'privacy.html'));
+});
+
 router.get('/api/public/status', async (req, res) => {
   try {
     const anyServer = db.prepare('SELECT * FROM guild_servers WHERE is_active = 1 LIMIT 1').get();
