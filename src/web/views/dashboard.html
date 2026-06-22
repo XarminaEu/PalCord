@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PalCord Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      min-height: 100vh;
+    }
+    header {
+      background: #16213e;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    header h1 { font-size: 1.5rem; }
+    header h1 span { color: #57f287; }
+    .user { display: flex; align-items: center; gap: 1rem; }
+    .user img { width: 36px; height: 36px; border-radius: 50%; }
+    .logout { color: #a0a0a0; text-decoration: none; }
+    .lang-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: 0.35rem 0.75rem;
+      margin-left: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .lang-btn.active { background: #5865f2; border-color: #5865f2; }
+    .main { display: flex; min-height: calc(100vh - 70px); }
+    .sidebar {
+      width: 280px;
+      background: #0f0f23;
+      padding: 1.5rem;
+      border-right: 1px solid #2a2a4a;
+    }
+    .sidebar h2 { font-size: 1rem; color: #a0a0a0; margin-bottom: 1rem; text-transform: uppercase; }
+    .guild-list { list-style: none; }
+    .guild-list li {
+      padding: 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .guild-list li:hover { background: #1a1a3e; }
+    .guild-list li.active { background: #5865f2; }
+    .guild-list img { width: 32px; height: 32px; border-radius: 50%; }
+    .content {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    .section {
+      background: #16213e;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .section h3 { margin-bottom: 1rem; color: #57f287; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    .card {
+      background: #1a1a3e;
+      padding: 1rem;
+      border-radius: 6px;
+    }
+    .card label { display: block; color: #a0a0a0; font-size: 0.85rem; margin-bottom: 0.25rem; }
+    .card .value { font-size: 1.25rem; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #2a2a4a; }
+    th { color: #a0a0a0; font-weight: 500; }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem;
+      background: #1a1a3e;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+    .btn {
+      background: #5865f2;
+      color: #fff;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn:hover { background: #4752c4; }
+    .btn-danger { background: #ed4245; }
+    .btn-danger:hover { background: #c03537; }
+    .btn-success { background: #57f287; color: #1a1a2e; }
+    .btn-success:hover { background: #4ad97a; }
+    .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .badge-admin { background: #57f287; color: #1a1a2e; }
+    .badge-user { background: #2a2a4a; color: #fff; }
+    .hidden { display: none !important; }
+    .tabs { display: flex; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #2a2a4a; }
+    .tab { padding: 0.5rem 1rem; cursor: pointer; color: #a0a0a0; }
+    .tab.active { color: #57f287; border-bottom: 2px solid #57f287; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 900px) { .main { flex-direction: column; } .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #2a2a4a; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pal<span>Cord</span> Dashboard</h1>
+    <div class="user">
+      <span id="user-name"></span>
+      <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <img id="user-avatar" src="" alt="Avatar">
+      <a href="/logout" class="logout" id="logout-link">Logout</a>
+    </div>
+  </header>
+  <div class="main">
+    <aside class="sidebar">
+      <h2 id="sidebar-title">Deine Discord Server</h2>
+      <ul class="guild-list" id="guild-list"></ul>
+    </aside>
+    <main class="content" id="content">
+      <div class="section">
+        <h3 id="welcome-title">Willkommen</h3>
+        <p id="welcome-text">Wähle einen Discord-Server aus der linken Seite, um Palworld-Server, Shop und Einstellungen zu verwalten.</p>
+      </div>
+    </main>
+  </div>
+  <footer style="position:fixed;bottom:0;left:0;right:0;text-align:center;padding:0.5rem;background:#0f0f1a;color:#a0a0a0;font-size:0.8rem;z-index:100;">PalCord &copy; 2026 RL-Dev.de</footer>
+
+  <script src="/static/i18n-frontend.js"></script>
+  <script>
+    let currentUser = null;
+    let currentGuild = null;
+    let currentGuildData = null;
+    let activeTab = 'server';
+
+    async function loadMe() {
+      const res = await fetch('/api/me');
+      const data = await res.json();
+      currentUser = data.user;
+      document.getElementById('user-name').textContent = data.user.username;
+      const avatar = data.user.avatar
+        ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
+        : 'https://cdn.discordapp.com/embed/avatars/0.png';
+      document.getElementById('user-avatar').src = avatar;
+    }
+
+    async function loadGuilds() {
+      const res = await fetch('/api/guilds');
+      const guilds = await res.json();
+      const list = document.getElementById('guild-list');
+      list.innerHTML = '';
+      if (guilds.length === 0) {
+        list.innerHTML = `<li style="cursor:default;color:#a0a0a0;">${T('no_servers_found')}</li>`;
+        return;
+      }
+      for (const g of guilds) {
+        const li = document.createElement('li');
+        li.dataset.id = g.id;
+        const icon = g.icon
+          ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png`
+          : 'https://cdn.discordapp.com/embed/avatars/0.png';
+        const status = g.botPresent
+          ? ''
+          : `<span style="color:#ed4245;margin-left:auto;font-size:0.75rem;">${T('bot_missing')}</span>`;
+        li.style.opacity = g.botPresent ? '1' : '0.5';
+        li.style.cursor = g.botPresent ? 'pointer' : 'default';
+        li.innerHTML = `<img src="${icon}" alt=""><span>${escapeHtml(g.name)}</span>${status}`;
+        if (g.botPresent) {
+          li.onclick = () => selectGuild(g.id);
+        } else {
+          li.onclick = () => {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+              <div class="section">
+                <h3>${T('bot_missing')} ${escapeHtml(g.name)}</h3>
+                <p>${T('bot_invite_text')}</p>
+                <a href="${g.inviteUrl}" target="_blank" class="btn">${T('bot_invite')}</a>
+              </div>
+            `;
+          };
+        }
+        list.appendChild(li);
+      }
+    }
+
+    async function selectGuild(guildId) {
+      document.querySelectorAll('.guild-list li').forEach(li => li.classList.remove('active'));
+      const active = document.querySelector(`.guild-list li[data-id="${guildId}"]`);
+      if (active) active.classList.add('active');
+      currentGuild = guildId;
+
+      // ensure guild is registered in db
+      await fetch(`/api/guilds/${guildId}/register`, { method: 'POST' });
+
+      const res = await fetch(`/api/guilds/${guildId}`);
+      currentGuildData = await res.json();
+      renderTabs();
+      renderContent();
+    }
+
+    function renderTabs() {
+      if (!currentGuildData.isAdmin) {
+        if (!['status', 'bases'].includes(activeTab)) activeTab = 'status';
+      }
+    }
+
+    function renderContent() {
+      const c = document.getElementById('content');
+      const isAdmin = currentGuildData.isAdmin;
+      const tabs = isAdmin ? `
+        <div class="tabs">
+          <div class="tab ${activeTab === 'server' ? 'active' : ''}" onclick="activeTab='server';renderContent();">${T('server')}</div>
+          <div class="tab ${activeTab === 'status' ? 'active' : ''}" onclick="activeTab='status';renderContent();">${T('status')}</div>
+          <div class="tab ${activeTab === 'shop' ? 'active' : ''}" onclick="activeTab='shop';renderContent();">${T('shop')}</div>
+          <div class="tab ${activeTab === 'players' ? 'active' : ''}" onclick="activeTab='players';renderContent();">${T('players')}</div>
+          <div class="tab ${activeTab === 'bases' ? 'active' : ''}" onclick="activeTab='bases';renderContent();">${T('bases')}</div>
+          <div class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="activeTab='users';renderContent();">${T('users')}</div>
+          <div class="tab ${activeTab === 'admin' ? 'active' : ''}" onclick="activeTab='admin';renderContent();">${T('admin')}</div>
+        </div>
+      ` : `
+        <div class="tabs">
+          <div class="tab ${activeTab === 'status' ? 'active' : ''}" onclick="activeTab='status';renderContent();">${T('status')}</div>
+          <div class="tab ${activeTab === 'bases' ? 'active' : ''}" onclick="activeTab='bases';renderContent();">${T('bases')}</div>
+        </div>
+      `;
+
+      if (!isAdmin && activeTab === 'status') {
+        c.innerHTML = tabs + statusView();
+        loadStatus();
+        return;
+      }
+
+      if (!isAdmin && activeTab === 'bases') {
+        c.innerHTML = tabs + basesView();
+        loadBases();
+        return;
+      }
+      let view = '';
+      if (activeTab === 'server') view = serversView();
+      else if (activeTab === 'status') view = statusView();
+      else if (activeTab === 'shop') view = shopView();
+      else if (activeTab === 'players') view = playersView();
+      else if (activeTab === 'bases') view = basesView();
+      else if (activeTab === 'users') view = usersView();
+      else if (activeTab === 'admin') view = adminView();
+      c.innerHTML = tabs + view;
+
+      if (activeTab === 'server') loadServers();
+      else if (activeTab === 'status') loadStatus();
+      else if (activeTab === 'shop') loadShop();
+      else if (activeTab === 'players') loadPlayers();
+      else if (activeTab === 'bases') loadBases();
+      else if (activeTab === 'users') loadUsers();
+      else if (activeTab === 'admin') loadAdmin();
+    }
+
+    function serversView() {
+      return `
+        <div class="section">
+          <h3>${T('add_server')}</h3>
+          <form id="server-form">
+            <div class="form-row">
+              <input type="text" id="s-name" placeholder="${T('server_name')}" required>
+              <input type="text" id="s-ip" placeholder="${T('server_ip_port')}" required>
+            </div>
+            <div class="form-row">
+              <input type="text" id="s-rcon-host" placeholder="${T('rcon_host')}" required>
+              <input type="number" id="s-rcon-port" placeholder="${T('rcon_port')}" value="25575" required>
+            </div>
+            <input type="text" id="s-rcon-password" placeholder="${T('rcon_password')}" required>
+            <div class="form-row">
+              <input type="text" id="s-rest-api-host" placeholder="${T('rest_api_host')}">
+              <input type="number" id="s-rest-api-port" placeholder="${T('rest_api_port')}" value="8212">
+            </div>
+            <input type="text" id="s-rest-api-user" placeholder="${T('rest_api_username')}" value="admin">
+            <div class="form-row">
+              <input type="number" id="s-max-players" placeholder="${T('max_players')}" value="32">
+              <input type="text" id="s-emblem" placeholder="${T('emblem_url')}">
+            </div>
+            <input type="text" id="s-info-url" placeholder="${T('info_url')}">
+            <textarea id="s-description" placeholder="${T('description')}" rows="2"></textarea>
+            <button type="submit" class="btn">${T('add')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('settings')}</h3>
+          <form id="server-config-form">
+            <div class="form-row">
+              <input type="number" id="s-max-bases" placeholder="${T('max_bases')}" value="5" min="1" max="50">
+            </div>
+            <button type="submit" class="btn">${T('save')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('scheduled_broadcasts')}</h3>
+          <form id="broadcast-form">
+            <input type="text" id="broadcast-message" placeholder="${T('broadcast_message')}" required>
+            <div class="form-row" style="align-items:center;">
+              <label style="display:flex;align-items:center;gap:0.5rem;color:#a0a0a0;"><input type="checkbox" id="broadcast-recurring" style="width:auto;margin:0;"> ${T('daily')}</label>
+            </div>
+            <input type="datetime-local" id="broadcast-time" required>
+            <input type="time" id="broadcast-daily-time" placeholder="${T('time')}" style="display:none;">
+            <button type="submit" class="btn">${T('add_broadcast')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('scheduled_broadcasts')}</h3>
+          <table id="broadcasts-table"><thead><tr><th>${T('broadcast_message')}</th><th>${T('broadcast_time')}</th><th>${T('recurring')}</th><th>${T('status')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="section">
+          <h3>${T('server')}</h3>
+          <div id="server-list"></div>
+        </div>
+      `;
+    }
+
+    async function loadServers() {
+      const [serversRes, configRes, broadcastsRes] = await Promise.all([
+        fetch(`/api/guilds/${currentGuild}/servers`),
+        fetch(`/api/guilds/${currentGuild}/config`),
+        fetch(`/api/guilds/${currentGuild}/broadcasts`),
+      ]);
+      const servers = await serversRes.json();
+      const config = await configRes.json();
+      const broadcasts = await broadcastsRes.json();
+      const div = document.getElementById('server-list');
+
+      const maxBasesInput = document.getElementById('s-max-bases');
+      if (maxBasesInput) maxBasesInput.value = config.max_bases || 5;
+
+      const bTbody = document.querySelector('#broadcasts-table tbody');
+      if (bTbody) {
+        bTbody.innerHTML = broadcasts.map(b => {
+          const timeInfo = b.recurring ? `${T('recurring_daily')} ${b.time || '-'}` : new Date(b.run_at).toLocaleString();
+          return `
+          <tr>
+            <td>${escapeHtml(b.message)}</td>
+            <td>${timeInfo}</td>
+            <td>${b.recurring ? '✅' : ''}</td>
+            <td>${b.recurring ? '♻️' : (b.sent ? '✅' : '⏳')}</td>
+            <td><button class="btn btn-danger" onclick="deleteBroadcast(${b.id})">${T('delete')}</button></td>
+          </tr>
+        `}).join('');
+        if (broadcasts.length === 0) bTbody.innerHTML = `<tr><td colspan="5">${T('no_broadcasts')}</td></tr>`;
+      }
+      if (servers.length === 0) {
+        div.innerHTML = `<p>${T('no_servers')}</p>`;
+      } else {
+        div.innerHTML = servers.map(s => `
+          <div class="card" style="margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong>${escapeHtml(s.name)}</strong> ${s.is_active ? `<span class="badge badge-admin">${T('active')}</span>` : ''}
+                <div style="color:#a0a0a0;font-size:0.85rem;">${s.server_ip} | RCON ${s.rcon_host}:${s.rcon_port}</div>
+              </div>
+              <div>
+                ${!s.is_active ? `<button class="btn btn-success" onclick="activateServer(${s.id})">${T('active')}</button>` : ''}
+                <button class="btn btn-danger" onclick="deleteServer(${s.id})">${T('delete')}</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const form = document.getElementById('server-form');
+      const oldForm = form.cloneNode(true);
+      form.parentNode.replaceChild(oldForm, form);
+      oldForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentGuild) {
+          alert('Kein Discord-Server ausgewählt.');
+          return;
+        }
+        const submitBtn = oldForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Speichern...';
+        const body = {
+          name: document.getElementById('s-name').value,
+          server_ip: document.getElementById('s-ip').value,
+          rcon_host: document.getElementById('s-rcon-host').value,
+          rcon_port: parseInt(document.getElementById('s-rcon-port').value),
+          rcon_password: document.getElementById('s-rcon-password').value,
+          rest_api_host: document.getElementById('s-rest-api-host').value || null,
+          rest_api_port: parseInt(document.getElementById('s-rest-api-port').value),
+          rest_api_username: document.getElementById('s-rest-api-user').value,
+          max_players: parseInt(document.getElementById('s-max-players').value),
+          emblem_url: document.getElementById('s-emblem').value,
+          info_url: document.getElementById('s-info-url').value,
+          description: document.getElementById('s-description').value,
+        };
+        try {
+          const res = await fetch(`/api/guilds/${currentGuild}/servers`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            alert(`${T('error')}: ${data.error || T('server_create_failed')}`);
+          } else {
+            oldForm.reset();
+            alert(T('server_created'));
+            renderContent();
+          }
+        } catch (err) {
+          alert(`Netzwerkfehler: ${err.message}`);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Hinzufügen';
+        }
+      });
+
+      const configForm = document.getElementById('server-config-form');
+      if (configForm) {
+        configForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const res = await fetch(`/api/guilds/${currentGuild}/config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ max_bases: parseInt(document.getElementById('s-max-bases').value) }),
+          });
+          if (res.ok) {
+            alert(T('success'));
+          } else {
+            const data = await res.json();
+            alert(`${T('error')}: ${data.error || 'Fehler'}`);
+          }
+        });
+      }
+
+      const broadcastForm = document.getElementById('broadcast-form');
+      if (broadcastForm) {
+        const recurringCheckbox = document.getElementById('broadcast-recurring');
+        const runAtInput = document.getElementById('broadcast-time');
+        const dailyTimeInput = document.getElementById('broadcast-daily-time');
+        const toggleFields = () => {
+          const recurring = recurringCheckbox.checked;
+          runAtInput.style.display = recurring ? 'none' : 'block';
+          runAtInput.required = !recurring;
+          dailyTimeInput.style.display = recurring ? 'block' : 'none';
+          dailyTimeInput.required = recurring;
+        };
+        recurringCheckbox.addEventListener('change', toggleFields);
+        toggleFields();
+        broadcastForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const recurring = recurringCheckbox.checked;
+          const runAt = runAtInput.value;
+          const dailyTime = dailyTimeInput.value;
+          const now = new Date();
+          let body;
+          if (recurring) {
+            if (!dailyTime) return;
+            const [hour, minute] = dailyTime.split(':');
+            const runAtDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
+            body = {
+              message: document.getElementById('broadcast-message').value,
+              run_at: runAtDate.toISOString(),
+              recurring: true,
+              time: dailyTime,
+            };
+          } else {
+            if (!runAt) return;
+            body = {
+              message: document.getElementById('broadcast-message').value,
+              run_at: new Date(runAt).toISOString(),
+              recurring: false,
+              time: null,
+            };
+          }
+          const res = await fetch(`/api/guilds/${currentGuild}/broadcasts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (res.ok) {
+            broadcastForm.reset();
+            recurringCheckbox.checked = false;
+            toggleFields();
+            renderContent();
+          } else {
+            const data = await res.json();
+            alert(`${T('error')}: ${data.error || 'Fehler'}`);
+          }
+        });
+      }
+    }
+
+    async function deleteBroadcast(id) {
+      if (!confirm(`${T('delete')}?`)) return;
+      await fetch(`/api/guilds/${currentGuild}/broadcasts/${id}`, { method: 'DELETE' });
+      renderContent();
+    }
+
+    async function activateServer(id) {
+      await fetch(`/api/guilds/${currentGuild}/servers/${id}/activate`, { method: 'POST' });
+      renderContent();
+    }
+
+    async function deleteServer(id) {
+      if (!confirm('Server wirklich löschen?')) return;
+      await fetch(`/api/guilds/${currentGuild}/servers/${id}`, { method: 'DELETE' });
+      renderContent();
+    }
+
+    function statusView() {
+      return `
+        <div class="section">
+          <h3>${T('status')}</h3>
+          <div class="grid" id="status-grid"></div>
+        </div>
+      `;
+    }
+
+    async function loadStatus() {
+      const res = await fetch(`/api/guilds/${currentGuild}/status`);
+      const data = await res.json();
+      const div = document.getElementById('status-grid');
+      if (!div) return;
+      div.innerHTML = `
+        <div class="card"><label>${T('status')}</label><div class="value">${data.isOnline ? '🟢 ' + T('online') : '🔴 ' + T('offline')}</div></div>
+        <div class="card"><label>${T('players_online')}</label><div class="value">${data.currentPlayers}/${data.maxPlayers}</div></div>
+        <div class="card"><label>${T('version')}</label><div class="value">${escapeHtml(data.version || T('unknown'))}</div></div>
+        <div class="card"><label>${T('address')}</label><div class="value">${escapeHtml(data.address || '-')}</div></div>
+        <div class="card"><label>${T('bans')}</label><div class="value">${data.bansCount}</div></div>
+      `;
+    }
+
+    function shopView() {
+      return `
+        <div class="section">
+          <h3>${T('add_shop_item')}</h3>
+          <form id="shop-form">
+            <div class="form-row">
+              <select id="shop-type" required>
+                <option value="item">Item</option>
+                <option value="pal">Pal</option>
+                <option value="egg">Ei</option>
+                <option value="relic">Relic</option>
+                <option value="techpoints">Tech Punkte</option>
+                <option value="exp">EXP</option>
+              </select>
+              <div id="shop-item-select-wrapper">
+                <select id="shop-item-id" required></select>
+              </div>
+              <input type="text" id="shop-item-id-text" placeholder="ID" style="display:none;" required>
+            </div>
+            <div class="form-row egg-row" style="display:none;">
+              <select id="shop-egg-id"><option value="">${T('choose_egg')}</option></select>
+            </div>
+            <div class="form-row">
+              <input type="number" id="shop-price" placeholder="${T('price')}" required>
+              <input type="number" id="shop-amount" placeholder="${T('amount_level')}" value="1">
+            </div>
+            <button type="submit" class="btn">${T('add')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('shop_items')}</h3>
+          <table id="shop-table"><thead><tr><th>${T('player_name')}</th><th>${T('item_type')}</th><th>${T('price')}</th><th>${T('amount_level')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+        </div>
+      `;
+    }
+
+    async function loadShop() {
+      const res = await fetch(`/api/guilds/${currentGuild}/shop`);
+      const items = await res.json();
+      const tbody = document.querySelector('#shop-table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = items.map(i => `
+        <tr>
+          <td>${escapeHtml(i.name || i.item_id)}</td>
+          <td>${i.item_type}</td>
+          <td>${i.price}</td>
+          <td>${i.level || i.amount}</td>
+          <td><button class="btn btn-danger" onclick="deleteShopItem(${i.id})">${T('delete')}</button></td>
+        </tr>
+      `).join('');
+      if (items.length === 0) tbody.innerHTML = `<tr><td colspan="5">${T('no_shop_items')}</td></tr>`;
+
+      const [itemsRes, palsRes] = await Promise.all([fetch('/api/items'), fetch('/api/pals')]);
+      const allItems = await itemsRes.json();
+      const allPals = await palsRes.json();
+
+      function populateItemDropdown() {
+        const itemSelect = document.getElementById('shop-item-id');
+        const eggSelect = document.getElementById('shop-egg-id');
+        const typeSelect = document.getElementById('shop-type');
+        const wrapper = document.getElementById('shop-item-select-wrapper');
+        const textInput = document.getElementById('shop-item-id-text');
+        const type = typeSelect.value;
+        itemSelect.innerHTML = '';
+        eggSelect.innerHTML = '<option value="">Egg wählen (optional)</option>';
+        if (type === 'item') {
+          allItems.forEach(i => {
+            const opt = document.createElement('option');
+            opt.value = i.id;
+            opt.textContent = `${i.name} (${i.id})`;
+            itemSelect.appendChild(opt);
+          });
+        } else if (type === 'pal' || type === 'egg') {
+          allPals.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.id})`;
+            itemSelect.appendChild(opt);
+            if (type === 'egg') {
+              const eggOpt = document.createElement('option');
+              eggOpt.value = p.id;
+              eggOpt.textContent = p.name;
+              eggSelect.appendChild(eggOpt);
+            }
+          });
+        }
+        const needsDropdown = ['item', 'pal', 'egg'].includes(type);
+        wrapper.style.display = needsDropdown ? 'block' : 'none';
+        textInput.style.display = needsDropdown ? 'none' : 'block';
+        textInput.disabled = needsDropdown;
+        itemSelect.required = needsDropdown;
+        textInput.required = !needsDropdown;
+        document.querySelector('.egg-row').style.display = type === 'egg' ? 'flex' : 'none';
+      }
+
+      populateItemDropdown();
+      document.getElementById('shop-type').addEventListener('change', populateItemDropdown);
+
+      document.getElementById('shop-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const type = document.getElementById('shop-type').value;
+        const needsDropdown = ['item', 'pal', 'egg'].includes(type);
+        const body = {
+          item_type: type,
+          item_id: needsDropdown ? document.getElementById('shop-item-id').value : document.getElementById('shop-item-id-text').value,
+          price: parseInt(document.getElementById('shop-price').value),
+          amount: parseInt(document.getElementById('shop-amount').value),
+          level: parseInt(document.getElementById('shop-amount').value),
+          egg_id: type === 'egg' ? document.getElementById('shop-egg-id').value || null : null,
+        };
+        const res = await fetch(`/api/guilds/${currentGuild}/shop`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          e.target.reset();
+          populateItemDropdown();
+          renderContent();
+        } else {
+          const data = await res.json();
+          alert(`Fehler: ${data.error || 'Shop-Item konnte nicht hinzugefügt werden.'}`);
+        }
+      });
+    }
+
+    async function deleteShopItem(id) {
+      if (!confirm(`${T('delete')}?`)) return;
+      await fetch(`/api/guilds/${currentGuild}/shop/${id}`, { method: 'DELETE' });
+      renderContent();
+    }
+
+    const PLATFORM_ICONS = {
+      steam: '💻', xbox: '🎮', playstation: '🕹️', mac: '🍎', windows: '🪟', switch: '🔴', unknown: '❓'
+    };
+
+    function platformIcon(platform) {
+      return PLATFORM_ICONS[platform] || PLATFORM_ICONS.unknown;
+    }
+
+    function playersView() {
+      const isAdmin = currentGuildData.isAdmin;
+      return `
+        <div class="section">
+          <h3>${T('players')}</h3>
+          <table id="players-table"><thead><tr><th>${T('player_name')}</th><th>${T('platform')}</th><th>${T('user_id')}</th><th>${T('level')}</th><th>${T('coins')}</th><th>${T('playtime')}</th>${isAdmin ? `<th>${T('action')}</th>` : ''}</tr></thead><tbody></tbody></table>
+        </div>
+      `;
+    }
+
+    function basesView() {
+      return `
+        <div class="section">
+          <h3>${T('add_base')}</h3>
+          <form id="base-form">
+            <div class="form-row" id="base-player-row">
+              <select id="base-player" required></select>
+              <input type="text" id="base-name" placeholder="${T('base_name')}" required>
+            </div>
+            <div class="form-row">
+              <input type="number" step="any" id="base-x" placeholder="X" required>
+              <input type="number" step="any" id="base-y" placeholder="Y" required>
+            </div>
+            <div class="form-row">
+              <input type="number" step="any" id="base-z" placeholder="Z (optional)">
+              <label style="display:flex;align-items:center;gap:0.5rem;color:#a0a0a0;"><input type="checkbox" id="base-main" style="width:auto;margin:0;"> ${T('main_base')}</label>
+            </div>
+            <input type="text" id="base-description" placeholder="${T('description')}">
+            <button type="submit" class="btn">${T('add')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('edit_base')}</h3>
+          <form id="base-edit-form">
+            <div class="form-row">
+              <select id="base-edit-select" required>
+                <option value="">${T('choose_base')}</option>
+              </select>
+              <input type="text" id="base-edit-name" placeholder="${T('base_name')}" required>
+            </div>
+            <div class="form-row">
+              <input type="number" step="any" id="base-edit-x" placeholder="X" required>
+              <input type="number" step="any" id="base-edit-y" placeholder="Y" required>
+            </div>
+            <div class="form-row">
+              <input type="number" step="any" id="base-edit-z" placeholder="Z (optional)">
+              <label style="display:flex;align-items:center;gap:0.5rem;color:#a0a0a0;"><input type="checkbox" id="base-edit-main" style="width:auto;margin:0;"> ${T('main_base')}</label>
+            </div>
+            <input type="text" id="base-edit-description" placeholder="${T('description')}">
+            <button type="submit" class="btn">${T('save')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('bases')}</h3>
+          <p id="bases-limit-info" style="color:#a0a0a0;margin-bottom:0.5rem;"></p>
+          <table id="bases-table"><thead><tr><th>${T('player_name')}</th><th>${T('base_name')}</th><th>X</th><th>Y</th><th>Z</th><th>${T('description')}</th><th>${T('main_base')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+        </div>
+      `;
+    }
+
+    async function loadPlayers() {
+      const isAdmin = currentGuildData.isAdmin;
+      const res = await fetch(`/api/guilds/${currentGuild}/players`);
+      const players = await res.json();
+      const tbody = document.querySelector('#players-table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = players.map(p => {
+        const actions = isAdmin ? `
+          <td>
+            <button class="btn btn-danger player-kick" data-userid="${String(p.user_id).replace(/"/g, '&quot;')}">${T('kick')}</button>
+            <button class="btn btn-danger player-ban" data-userid="${String(p.user_id).replace(/"/g, '&quot;')}">${T('ban')}</button>
+            <button class="btn player-whitelist" data-userid="${String(p.user_id).replace(/"/g, '&quot;')}">${T('whitelist')}</button>
+          </td>
+        ` : '';
+        return `
+        <tr>
+          <td>${escapeHtml(p.ingame_name || '-')}</td>
+          <td>${platformIcon(p.platform)} ${p.platform ? p.platform.toUpperCase() : 'UNKNOWN'}</td>
+          <td>${p.user_id}</td>
+          <td>${p.level}</td>
+          <td>${p.coins.toFixed ? p.coins.toFixed(2) : p.coins}</td>
+          <td>${Math.floor(p.total_playtime / 60)}h ${p.total_playtime % 60}m</td>
+          ${actions}
+        </tr>
+      `}).join('');
+      if (players.length === 0) tbody.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}">${T('no_players')}</td></tr>`;
+
+      tbody.querySelectorAll('.player-kick').forEach(btn => btn.addEventListener('click', () => playerKick(btn.dataset.userid)));
+      tbody.querySelectorAll('.player-ban').forEach(btn => btn.addEventListener('click', () => playerBan(btn.dataset.userid)));
+      tbody.querySelectorAll('.player-whitelist').forEach(btn => btn.addEventListener('click', () => playerWhitelist(btn.dataset.userid)));
+    }
+
+    async function playerKick(userId) {
+      const reason = prompt(T('reason'), 'Kick');
+      if (reason === null) return;
+      const res = await fetch(`/api/guilds/${currentGuild}/admin/kick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, message: reason }),
+      });
+      const data = await res.json();
+      alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+    }
+
+    async function playerBan(userId) {
+      const reason = prompt(T('reason'), 'Ban');
+      if (reason === null) return;
+      const res = await fetch(`/api/guilds/${currentGuild}/admin/ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, message: reason }),
+      });
+      const data = await res.json();
+      alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+    }
+
+    async function playerWhitelist(userId) {
+      const res = await fetch(`/api/guilds/${currentGuild}/admin/whitelist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', userId }),
+      });
+      const data = await res.json();
+      alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+    }
+
+    function usersView() {
+      return `
+        <div class="section">
+          <h3>${T('users')}</h3>
+          <table id="users-table"><thead><tr><th>${T('discord_id')}</th><th>${T('role')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+        </div>
+      `;
+    }
+
+    function adminView() {
+      return `
+        <div class="section">
+          <h3>${T('broadcast')}</h3>
+          <form id="admin-broadcast-form">
+            <input type="text" id="admin-broadcast-message" placeholder="${T('broadcast_message')}" required>
+            <button type="submit" class="btn">${T('send')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('server_control')}</h3>
+          <div class="form-row">
+            <button class="btn" onclick="adminAction('save')">${T('save_server')}</button>
+            <button class="btn btn-danger" onclick="adminShutdown()">${T('shutdown')}</button>
+          </div>
+        </div>
+        <div class="section">
+          <h3>${T('player_actions')}</h3>
+          <form id="admin-kick-form">
+            <div class="form-row">
+              <input type="text" id="admin-kick-user" placeholder="${T('user_id')}" required>
+              <input type="text" id="admin-kick-reason" placeholder="${T('reason')}">
+            </div>
+            <button type="submit" class="btn btn-danger">${T('kick')}</button>
+          </form>
+          <form id="admin-ban-form" style="margin-top:1rem;">
+            <div class="form-row">
+              <input type="text" id="admin-ban-user" placeholder="${T('user_id')}" required>
+              <input type="text" id="admin-ban-reason" placeholder="${T('reason')}">
+            </div>
+            <button type="submit" class="btn btn-danger">${T('ban')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('set_time')}</h3>
+          <form id="admin-settime-form">
+            <div class="form-row">
+              <input type="number" id="admin-hour" placeholder="${T('hour')}" min="0" max="24" required>
+              <button type="submit" class="btn">${T('set')}</button>
+            </div>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('whitelist')}</h3>
+          <form id="admin-whitelist-form">
+            <div class="form-row">
+              <input type="text" id="admin-whitelist-user" placeholder="${T('user_id')}" required>
+              <select id="admin-whitelist-action">
+                <option value="add">${T('add')}</option>
+                <option value="remove">${T('remove')}</option>
+              </select>
+            </div>
+            <button type="submit" class="btn">${T('save')}</button>
+            <button type="button" class="btn" onclick="adminWhitelistGet()">${T('show')}</button>
+          </form>
+          <pre id="admin-whitelist-result" style="margin-top:1rem;background:#1a1a2e;padding:1rem;border-radius:0.5rem;min-height:3rem;color:#a0a0a0;"></pre>
+        </div>
+      `;
+    }
+
+    async function loadAdmin() {
+      const broadcastForm = document.getElementById('admin-broadcast-form');
+      if (broadcastForm) {
+        broadcastForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const message = document.getElementById('admin-broadcast-message').value;
+          const res = await fetch(`/api/guilds/${currentGuild}/admin/broadcast`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message }),
+          });
+          const data = await res.json();
+          alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+        });
+      }
+
+      const kickForm = document.getElementById('admin-kick-form');
+      if (kickForm) {
+        kickForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const res = await fetch(`/api/guilds/${currentGuild}/admin/kick`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: document.getElementById('admin-kick-user').value,
+              message: document.getElementById('admin-kick-reason').value,
+            }),
+          });
+          const data = await res.json();
+          alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+        });
+      }
+
+      const banForm = document.getElementById('admin-ban-form');
+      if (banForm) {
+        banForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const res = await fetch(`/api/guilds/${currentGuild}/admin/ban`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: document.getElementById('admin-ban-user').value,
+              message: document.getElementById('admin-ban-reason').value,
+            }),
+          });
+          const data = await res.json();
+          alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+        });
+      }
+
+      const setTimeForm = document.getElementById('admin-settime-form');
+      if (setTimeForm) {
+        setTimeForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const res = await fetch(`/api/guilds/${currentGuild}/admin/settime`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hour: document.getElementById('admin-hour').value }),
+          });
+          const data = await res.json();
+          alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+        });
+      }
+
+      const whitelistForm = document.getElementById('admin-whitelist-form');
+      if (whitelistForm) {
+        whitelistForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const res = await fetch(`/api/guilds/${currentGuild}/admin/whitelist`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: document.getElementById('admin-whitelist-action').value,
+              userId: document.getElementById('admin-whitelist-user').value,
+            }),
+          });
+          const data = await res.json();
+          alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+        });
+      }
+    }
+
+    async function adminAction(action) {
+      const res = await fetch(`/api/guilds/${currentGuild}/admin/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      const data = await res.json();
+      alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+    }
+
+    async function adminShutdown() {
+      const seconds = prompt(T('shutdown_seconds'), '60');
+      if (!seconds) return;
+      const message = prompt(T('shutdown_message'), 'Server wird heruntergefahren');
+      if (message === null) return;
+      const res = await fetch(`/api/guilds/${currentGuild}/admin/shutdown`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seconds: parseInt(seconds), message }),
+      });
+      const data = await res.json();
+      alert(data.success ? T('success') : `${T('error')}: ${data.error || 'Fehler'}`);
+    }
+
+    async function adminWhitelistGet() {
+      const res = await fetch(`/api/guilds/${currentGuild}/admin/whitelist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get' }),
+      });
+      const data = await res.json();
+      const el = document.getElementById('admin-whitelist-result');
+      if (el) el.textContent = data.success ? (data.response || data.data || T('success')) : `${T('error')}: ${data.error || 'Fehler'}`;
+    }
+
+    async function loadBases() {
+      const isAdmin = currentGuildData.isAdmin;
+      const playersRes = isAdmin ? fetch(`/api/guilds/${currentGuild}/players`) : Promise.resolve({ json: async () => [] });
+      const configRes = isAdmin ? fetch(`/api/guilds/${currentGuild}/config`) : Promise.resolve({ json: async () => ({ max_bases: 5 }) });
+      const [players, bases, config] = await Promise.all([
+        playersRes.then(r => r.json()),
+        fetch(`/api/guilds/${currentGuild}/bases`).then(r => r.json()),
+        configRes.then(r => r.json()),
+      ]);
+      const maxBases = config.max_bases ? parseInt(config.max_bases, 10) : 5;
+
+      const playerRow = document.getElementById('base-player-row');
+      if (playerRow && !isAdmin) {
+        playerRow.style.display = 'none';
+        document.getElementById('base-player').required = false;
+      }
+
+      const playerSelect = document.getElementById('base-player');
+      if (playerSelect && isAdmin) {
+        playerSelect.innerHTML = `<option value="">${T('choose_player')}</option>` +
+          players.map(p => `<option value="${p.user_id}">${escapeHtml(p.ingame_name || p.user_id)}</option>`).join('');
+      }
+
+      const editSelect = document.getElementById('base-edit-select');
+      if (editSelect) {
+        editSelect.innerHTML = `<option value="">${T('choose_base')}</option>` +
+          bases.map(b => `<option value="${b.id}" data-base='${JSON.stringify(b).replace(/'/g, "&#39;")}'>${escapeHtml(b.name)} (${b.x}, ${b.y})</option>`).join('');
+        editSelect.addEventListener('change', () => {
+          const opt = editSelect.selectedOptions[0];
+          const data = opt.dataset.base ? JSON.parse(opt.dataset.base) : null;
+          if (data) {
+            document.getElementById('base-edit-name').value = data.name;
+            document.getElementById('base-edit-x').value = data.x;
+            document.getElementById('base-edit-y').value = data.y;
+            document.getElementById('base-edit-z').value = data.z !== null ? data.z : '';
+            document.getElementById('base-edit-description').value = data.description || '';
+            document.getElementById('base-edit-main').checked = !!data.is_main;
+          }
+        });
+      }
+
+      const limitInfo = document.getElementById('bases-limit-info');
+      if (limitInfo) {
+        limitInfo.textContent = isAdmin ? `${T('max_bases')}: ${maxBases}` : `${bases.length}/${maxBases} ${T('bases').toLowerCase()} ${T('per_user')}`;
+      }
+
+      const tbody = document.querySelector('#bases-table tbody');
+      if (tbody) {
+        tbody.innerHTML = bases.map(b => `
+          <tr>
+            <td>${escapeHtml(b.ingame_name || b.user_id)}</td>
+            <td>${escapeHtml(b.name)}</td>
+            <td>${b.x}</td>
+            <td>${b.y}</td>
+            <td>${b.z !== null ? b.z : '-'}</td>
+            <td>${escapeHtml(b.description || '')}</td>
+            <td>${b.is_main ? '✅' : ''}</td>
+            <td><button class="btn btn-danger" onclick="deleteBase(${b.id})">${T('delete')}</button></td>
+          </tr>
+        `).join('');
+        if (bases.length === 0) tbody.innerHTML = `<tr><td colspan="8">${T('no_bases')}</td></tr>`;
+      }
+
+      const form = document.getElementById('base-form');
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const body = {
+            user_id: isAdmin ? document.getElementById('base-player').value : undefined,
+            name: document.getElementById('base-name').value,
+            x: parseFloat(document.getElementById('base-x').value),
+            y: parseFloat(document.getElementById('base-y').value),
+            z: document.getElementById('base-z').value ? parseFloat(document.getElementById('base-z').value) : null,
+            description: document.getElementById('base-description').value || null,
+            is_main: document.getElementById('base-main').checked,
+          };
+          const res = await fetch(`/api/guilds/${currentGuild}/bases`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (res.ok) {
+            form.reset();
+            renderContent();
+          } else {
+            const data = await res.json();
+            alert(`${T('error')}: ${data.error || 'Fehler'}`);
+          }
+        });
+      }
+
+      const editForm = document.getElementById('base-edit-form');
+      if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = parseInt(document.getElementById('base-edit-select').value);
+          if (!id) return;
+          const body = {
+            name: document.getElementById('base-edit-name').value,
+            x: parseFloat(document.getElementById('base-edit-x').value),
+            y: parseFloat(document.getElementById('base-edit-y').value),
+            z: document.getElementById('base-edit-z').value ? parseFloat(document.getElementById('base-edit-z').value) : null,
+            description: document.getElementById('base-edit-description').value || null,
+            is_main: document.getElementById('base-edit-main').checked,
+          };
+          const res = await fetch(`/api/guilds/${currentGuild}/bases/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (res.ok) {
+            editForm.reset();
+            renderContent();
+          } else {
+            const data = await res.json();
+            alert(`${T('error')}: ${data.error || 'Fehler'}`);
+          }
+        });
+      }
+    }
+
+    async function deleteBase(id) {
+      if (!confirm(`${T('delete')}?`)) return;
+      await fetch(`/api/guilds/${currentGuild}/bases/${id}`, { method: 'DELETE' });
+      renderContent();
+    }
+
+    async function loadUsers() {
+      const res = await fetch(`/api/guilds/${currentGuild}/users`);
+      const users = await res.json();
+      const tbody = document.querySelector('#users-table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>${u.discord_id}</td>
+          <td><span class="badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role === 'admin' ? T('admin') : T('user')}</span></td>
+          <td>
+            <button class="btn" onclick="setUserRole('${u.discord_id}', '${u.role === 'admin' ? 'user' : 'admin'}')">${u.role === 'admin' ? T('user') : T('admin')}</button>
+          </td>
+        </tr>
+      `).join('');
+      if (users.length === 0) tbody.innerHTML = `<tr><td colspan="3">${T('no_users')}</td></tr>`;
+    }
+
+    async function setUserRole(discordId, role) {
+      await fetch(`/api/guilds/${currentGuild}/users/${discordId}/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      renderContent();
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    window.applyStaticTranslations = function() {
+      document.getElementById('sidebar-title').textContent = T('your_discord_servers');
+      document.getElementById('welcome-title').textContent = T('welcome');
+      document.getElementById('welcome-text').textContent = T('select_server_hint');
+      document.getElementById('logout-link').textContent = T('logout');
+      document.title = `${T('app_name')} ${T('dashboard')}`;
+    };
+
+    async function init() {
+      await loadMe();
+      await loadGuilds();
+    }
+
+    init();
+  </script>
+</body>
+</html>

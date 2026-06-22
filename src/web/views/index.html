@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PalCord Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 600px;
+    }
+    h1 { font-size: 3rem; margin-bottom: 1rem; }
+    h1 span { color: #57f287; }
+    p { color: #a0a0a0; margin-bottom: 2rem; font-size: 1.1rem; }
+    .btn {
+      display: inline-block;
+      background: #5865f2;
+      color: #fff;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn:hover { background: #4752c4; }
+    .lang-switch {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+    }
+    .lang-switch button {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: 0.35rem 0.75rem;
+      margin-left: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .lang-switch button.active {
+      background: #5865f2;
+      border-color: #5865f2;
+    }
+    .features {
+      margin-top: 2rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .feature {
+      background: rgba(255,255,255,0.05);
+      padding: 1rem;
+      border-radius: 8px;
+      min-width: 140px;
+    }
+    .feature strong { color: #57f287; display: block; margin-bottom: 0.25rem; }
+    .feature small { color: #a0a0a0; }
+    .copyright {
+      position: fixed;
+      bottom: 1rem;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #a0a0a0;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="lang-switch">
+    <button data-lang="de" onclick="setLang('de')">DE</button>
+    <button data-lang="en" onclick="setLang('en')">EN</button>
+  </div>
+  <div class="container">
+    <h1>Pal<span>Cord</span></h1>
+    <p id="subtitle">Discord Login mit deiner Discord-ID. Verwalte deine Palworld-Server, den Shop und deine Spieler.</p>
+    <a href="/auth/discord" class="btn" id="login-btn">Mit Discord einloggen</a>
+    <div class="features">
+      <div class="feature">
+        <strong id="feat-server-title">Server</strong>
+        <small id="feat-server-desc">Mehrere Palworld-Server pro Discord-Guild verwalten.</small>
+      </div>
+      <div class="feature">
+        <strong id="feat-shop-title">Shop</strong>
+        <small id="feat-shop-desc">Items, Pals und Eier mit Coins verkaufen.</small>
+      </div>
+      <div class="feature">
+        <strong id="feat-players-title">Spieler</strong>
+        <small id="feat-players-desc">Spieler, Plattform und Spielzeit übersichtlich.</small>
+      </div>
+    </div>
+    <div class="copyright">PalCord &copy; 2026 RL-Dev.de</div>
+  </div>
+  <script>
+    let T = {};
+    async function loadLang() {
+      const saved = document.cookie.split('; ').find(r => r.startsWith('lang='));
+      const lang = saved ? saved.split('=')[1] : navigator.language.startsWith('en') ? 'en' : 'de';
+      const res = await fetch('/api/lang');
+      const data = await res.json();
+      T = data.translations;
+      document.querySelectorAll('.lang-switch button').forEach(b => b.classList.toggle('active', b.dataset.lang === data.lang));
+      document.documentElement.lang = data.lang;
+      applyText();
+    }
+    function applyText() {
+      document.getElementById('subtitle').textContent = T.login_subtitle || 'Discord Login mit deiner Discord-ID. Verwalte deine Palworld-Server, den Shop und deine Spieler.';
+      document.getElementById('login-btn').textContent = T.login_with_discord || 'Mit Discord einloggen';
+      document.getElementById('feat-server-title').textContent = T.server || 'Server';
+      document.getElementById('feat-server-desc').textContent = T.feat_server_desc || 'Mehrere Palworld-Server pro Discord-Guild verwalten.';
+      document.getElementById('feat-shop-title').textContent = T.shop || 'Shop';
+      document.getElementById('feat-shop-desc').textContent = T.feat_shop_desc || 'Items, Pals und Eier mit Coins verkaufen.';
+      document.getElementById('feat-players-title').textContent = T.players || 'Spieler';
+      document.getElementById('feat-players-desc').textContent = T.feat_players_desc || 'Spieler, Plattform und Spielzeit übersichtlich.';
+    }
+    async function setLang(lang) {
+      await fetch('/api/lang', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }) });
+      loadLang();
+    }
+    loadLang();
+  </script>
+</body>
+</html>

@@ -1,0 +1,425 @@
+const express = require('express');
+const path = require('path');
+const config = require('../config');
+const db = require('../database/db');
+const guildService = require('../services/guildService');
+const playerService = require('../services/playerService');
+const shopService = require('../services/shopService');
+const baseService = require('../services/baseService');
+const scheduledBroadcastService = require('../services/scheduledBroadcastService');
+const serverStatusService = require('../services/serverStatusService');
+const { isConnected } = require('../rcon/client');
+const logger = require('../logger');
+const { client: discordClient } = require('../bot/client');
+const router = express.Router();
+const copyrightService = require('../services/copyrightService');
+
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.redirect('/auth/discord');
+}
+
+async function ensureCopyright(req, res, next) {
+  const allowed = await copyrightService.verifyRemote();
+  if (allowed) return next();
+  res.status(403).send(`<!DOCTYPE html><html><head><title>Copyright Error</title><style>body{font-family:sans-serif;background:#1a1a2e;color:#fff;padding:2rem;text-align:center;}</style></head><body><h1>Copyright Verification Failed</h1><p>${copyrightService.COPYRIGHT}</p><p>Application will not start.</p></body></html>`);
+}
+
+router.use(ensureCopyright);
+
+function isGlobalAdmin(req) {
+  return req.user && req.user.id === config.globalAdminId;
+}
+
+function getBotGuildIds() {
+  if (!discordClient || !discordClient.guilds) return new Set();
+  return new Set(discordClient.guilds.cache.map(g => g.id));
+}
+
+function canAccessGuild(req, guildId) {
+  if (isGlobalAdmin(req)) return true;
+  if (!req.user || !req.user.guilds) return false;
+  return req.user.guilds.some(g => g.id === guildId);
+}
+
+function isGuildAdmin(req, guildId) {
+  if (isGlobalAdmin(req)) return true;
+  return guildService.isGuildAdmin(guildId, req.user.id);
+}
+
+router.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'index.html'));
+});
+
+router.get('/dashboard', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
+});
+
+router.get('/api/me', ensureAuthenticated, (req, res) => {
+  res.json({
+    user: req.user,
+    isGlobalAdmin: isGlobalAdmin(req),
+  });
+});
+
+router.get('/api/items', ensureAuthenticated, (req, res) => {
+  const { search } = req.query;
+  let query = 'SELECT id, name, category FROM items';
+  let params = [];
+  if (search) {
+    query += ' WHERE name LIKE ?';
+    params = [`%${search}%`];
+  }
+  query += ' ORDER BY name LIMIT 500';
+  res.json(db.prepare(query).all(...params));
+});
+
+router.get('/api/pals', ensureAuthenticated, (req, res) => {
+  const { search } = req.query;
+  let query = 'SELECT id, name FROM pals';
+  let params = [];
+  if (search) {
+    query += ' WHERE name LIKE ?';
+    params = [`%${search}%`];
+  }
+  query += ' ORDER BY name LIMIT 500';
+  res.json(db.prepare(query).all(...params));
+});
+
+router.get('/api/guilds/:guildId/bases', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  let bases = baseService.getGuildBases(guildId);
+  if (!isGuildAdmin(req, guildId)) {
+    bases = bases.filter(b => b.discord_id === req.user.id);
+  }
+  res.json(bases);
+});
+
+router.post('/api/guilds/:guildId/bases', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  let { user_id, name, x, y, z, description, is_main } = req.body;
+  if (!name || x === undefined || y === undefined) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (!isGuildAdmin(req, guildId)) {
+    const player = db.prepare('SELECT user_id FROM players WHERE guild_id = ? AND discord_id = ?').get(guildId, req.user.id);
+    if (!player) return res.status(403).json({ error: 'Link your account first' });
+    user_id = player.user_id;
+  }
+  if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
+  try {
+    const id = baseService.addBase(guildId, user_id, { name, x, y, z, description, is_main });
+    res.json({ id });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.patch('/api/guilds/:guildId/bases/:id', ensureAuthenticated, (req, res) => {
+  const { guildId, id } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const base = baseService.getBaseById(parseInt(id), guildId);
+  if (!base) return res.status(404).json({ error: 'Base not found' });
+  if (!isGuildAdmin(req, guildId)) {
+    const player = db.prepare('SELECT user_id FROM players WHERE guild_id = ? AND discord_id = ?').get(guildId, req.user.id);
+    if (!player || player.user_id !== base.user_id) return res.status(403).json({ error: 'Forbidden' });
+  }
+  const ok = baseService.updateBase(parseInt(id), guildId, null, req.body);
+  if (!ok) return res.status(404).json({ error: 'Base not found' });
+  res.json({ ok: true });
+});
+
+router.delete('/api/guilds/:guildId/bases/:id', ensureAuthenticated, (req, res) => {
+  const { guildId, id } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const base = baseService.getBaseById(parseInt(id), guildId);
+  if (!base) return res.status(404).json({ error: 'Base not found' });
+  if (!isGuildAdmin(req, guildId)) {
+    const player = db.prepare('SELECT user_id FROM players WHERE guild_id = ? AND discord_id = ?').get(guildId, req.user.id);
+    if (!player || player.user_id !== base.user_id) return res.status(403).json({ error: 'Forbidden' });
+  }
+  const ok = baseService.deleteBase(parseInt(id), guildId, null);
+  if (!ok) return res.status(404).json({ error: 'Base not found' });
+  res.json({ ok: true });
+});
+
+router.get('/api/guilds/:guildId/config', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  res.json({
+    max_bases: guildService.getServerConfig(guildId, 'max_bases') || '5',
+  });
+});
+
+router.post('/api/guilds/:guildId/config', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const { max_bases } = req.body;
+  if (max_bases !== undefined) guildService.setServerConfig(guildId, 'max_bases', String(parseInt(max_bases, 10)));
+  res.json({ ok: true });
+});
+
+router.get('/api/guilds/:guildId/broadcasts', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  res.json(scheduledBroadcastService.getScheduledBroadcasts(guildId));
+});
+
+router.post('/api/guilds/:guildId/broadcasts', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const { message, run_at, recurring, time } = req.body;
+  if (!message || !run_at) return res.status(400).json({ error: 'Missing fields' });
+  const id = scheduledBroadcastService.addScheduledBroadcast(guildId, message, run_at, { recurring: recurring ? 1 : 0, time: time || null });
+  res.json({ id });
+});
+
+router.delete('/api/guilds/:guildId/broadcasts/:id', ensureAuthenticated, (req, res) => {
+  const { guildId, id } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const ok = scheduledBroadcastService.deleteScheduledBroadcast(parseInt(id), guildId);
+  if (!ok) return res.status(404).json({ error: 'Not found' });
+  res.json({ ok: true });
+});
+
+router.get('/api/guilds', ensureAuthenticated, (req, res) => {
+  const botGuildIds = getBotGuildIds();
+  const guilds = (req.user.guilds || []).map(g => {
+    const dbGuild = guildService.getGuild(g.id);
+    const botPresent = botGuildIds.has(g.id);
+    const permissions = 8; // Administrator
+    const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${config.discord.clientId}&permissions=${permissions}&scope=bot%20applications.commands&guild_id=${g.id}`;
+    return {
+      id: g.id,
+      name: g.name,
+      icon: g.icon,
+      owner: g.owner,
+      hasServer: !!dbGuild,
+      isAdmin: isGuildAdmin(req, g.id),
+      botPresent,
+      inviteUrl,
+    };
+  });
+  // Aktive zuerst
+  guilds.sort((a, b) => (b.botPresent === a.botPresent ? 0 : b.botPresent ? 1 : -1));
+  res.json(guilds);
+});
+
+router.get('/api/guilds/:guildId', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const guild = guildService.getGuild(guildId) || { id: guildId };
+  res.json({ ...guild, isAdmin: isGuildAdmin(req, guildId) });
+});
+
+router.post('/api/guilds/:guildId/register', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const guildInfo = (req.user.guilds || []).find(g => g.id === guildId);
+  guildService.ensureGuild(guildId, guildInfo ? guildInfo.name : '', req.user.id);
+  guildService.ensureGuildUser(guildId, req.user.id, 'admin');
+  res.json({ success: true });
+});
+
+router.get('/api/guilds/:guildId/servers', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  res.json(guildService.getGuildServers(guildId));
+});
+
+router.post('/api/guilds/:guildId/servers', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  logger.info(`Server creation attempt by ${req.user.id} for guild ${guildId}: ${JSON.stringify(req.body)}`);
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const guildInfo = (req.user.guilds || []).find(g => g.id === guildId);
+  guildService.ensureGuild(guildId, guildInfo ? guildInfo.name : '', req.user.id);
+  try {
+    const id = guildService.addGuildServer(guildId, req.body);
+    logger.info(`Server created: ${id} for guild ${guildId}`);
+    res.json({ id });
+  } catch (err) {
+    logger.error(`Server creation failed: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/api/guilds/:guildId/servers/:serverId', ensureAuthenticated, (req, res) => {
+  const { guildId, serverId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getGuildServer(serverId);
+  if (!server || server.guild_id !== guildId) return res.status(404).json({ error: 'Server not found' });
+  guildService.updateGuildServer(serverId, req.body);
+  res.json({ success: true });
+});
+
+router.delete('/api/guilds/:guildId/servers/:serverId', ensureAuthenticated, (req, res) => {
+  const { guildId, serverId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getGuildServer(serverId);
+  if (!server || server.guild_id !== guildId) return res.status(404).json({ error: 'Server not found' });
+  guildService.deleteGuildServer(serverId);
+  res.json({ success: true });
+});
+
+router.post('/api/guilds/:guildId/servers/:serverId/activate', ensureAuthenticated, (req, res) => {
+  const { guildId, serverId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  guildService.setActiveServer(guildId, serverId);
+  res.json({ success: true });
+});
+
+router.get('/api/guilds/:guildId/players', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  res.json(playerService.getPlayers(guildId));
+});
+
+router.get('/api/guilds/:guildId/shop', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  res.json(shopService.getShopItems(guildId));
+});
+
+router.post('/api/guilds/:guildId/shop', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const { item_id, item_type, price, amount, level, egg_id } = req.body;
+  const id = shopService.addShopItem(guildId, item_id, item_type, price, amount, level, egg_id);
+  res.json({ id });
+});
+
+router.patch('/api/guilds/:guildId/shop/:itemId', ensureAuthenticated, (req, res) => {
+  const { guildId, itemId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  shopService.updateShopItem(guildId, itemId, req.body);
+  res.json({ success: true });
+});
+
+router.delete('/api/guilds/:guildId/shop/:itemId', ensureAuthenticated, (req, res) => {
+  const { guildId, itemId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  shopService.deleteShopItem(guildId, itemId);
+  res.json({ success: true });
+});
+
+router.get('/api/guilds/:guildId/status', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.json({ error: 'No active server' });
+  const status = await serverStatusService.getStatus(guildId, server);
+  res.json(status);
+});
+
+router.post('/api/guilds/:guildId/rcon', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(400).json({ error: 'No active server' });
+  const { command } = req.body;
+  const rcon = require('../rcon/commands');
+  const result = await rcon.exec(server, command);
+  res.json(result);
+});
+
+router.get('/api/guilds/:guildId/users', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  res.json(guildService.getGuildUsers(guildId));
+});
+
+router.post('/api/guilds/:guildId/users/:discordId/role', ensureAuthenticated, (req, res) => {
+  const { guildId, discordId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const { role } = req.body;
+  guildService.setUserRole(guildId, discordId, role);
+  res.json({ success: true });
+});
+
+router.post('/api/guilds/:guildId/admin/broadcast', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(400).json({ error: 'No active server' });
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'Missing message' });
+  const result = await rconCommands.broadcast(server, message);
+  res.json(result);
+});
+
+router.post('/api/guilds/:guildId/admin/save', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(400).json({ error: 'No active server' });
+  const result = await rconCommands.save(server);
+  res.json(result);
+});
+
+router.post('/api/guilds/:guildId/admin/shutdown', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(400).json({ error: 'No active server' });
+  const { seconds = 60, message = 'Server wird heruntergefahren' } = req.body;
+  const result = await rconCommands.shutdown(server, seconds, message);
+  res.json(result);
+});
+
+router.post('/api/guilds/:guildId/admin/kick', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(400).json({ error: 'No active server' });
+  const { userId, message = 'Kick' } = req.body;
+  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+  const result = await rconCommands.kickPlayer(server, userId, message);
+  res.json(result);
+});
+
+router.post('/api/guilds/:guildId/admin/ban', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(400).json({ error: 'No active server' });
+  const { userId, message = 'Ban' } = req.body;
+  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+  const result = await rconCommands.banPlayer(server, userId, message);
+  res.json(result);
+});
+
+router.post('/api/guilds/:guildId/admin/settime', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(400).json({ error: 'No active server' });
+  const { hour } = req.body;
+  if (hour === undefined || hour === null) return res.status(400).json({ error: 'Missing hour' });
+  const result = await rconCommands.setTime(server, hour);
+  res.json(result);
+});
+
+router.post('/api/guilds/:guildId/admin/whitelist', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(400).json({ error: 'No active server' });
+  const { action, userId } = req.body;
+  let result;
+  if (action === 'add') {
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    result = await rconCommands.whitelistAdd(server, userId);
+  } else if (action === 'remove') {
+    if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    result = await rconCommands.whitelistRemove(server, userId);
+  } else if (action === 'get') {
+    result = await rconCommands.whitelistGet(server);
+  } else {
+    return res.status(400).json({ error: 'Invalid action' });
+  }
+  res.json(result);
+});
+
+module.exports = router;
