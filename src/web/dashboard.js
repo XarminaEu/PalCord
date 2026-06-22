@@ -51,6 +51,18 @@ router.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
+router.get('/api/public/status', async (req, res) => {
+  try {
+    const anyServer = db.prepare('SELECT * FROM guild_servers WHERE is_active = 1 LIMIT 1').get();
+    if (!anyServer) return res.json({ error: 'No public server' });
+    const status = await serverStatusService.getStatus(anyServer.guild_id, anyServer);
+    return res.json({ name: anyServer.name, isOnline: status.isOnline, currentPlayers: status.currentPlayers, maxPlayers: status.maxPlayers, address: anyServer.server_ip || '-' });
+  } catch (err) {
+    logger.error(`Public status error: ${err.message}`);
+    res.status(500).json({ error: 'Status unavailable' });
+  }
+});
+
 router.get('/dashboard', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
@@ -142,6 +154,29 @@ router.delete('/api/guilds/:guildId/bases/:id', ensureAuthenticated, (req, res) 
   }
   const ok = baseService.deleteBase(parseInt(id), guildId, null);
   if (!ok) return res.status(404).json({ error: 'Base not found' });
+  res.json({ ok: true });
+});
+
+const SETTINGS_KEYS = ['welcome_channel_id', 'auto_role_id', 'notification_channel_id', 'daily_reminder_channel_id', 'rules'];
+
+router.get('/api/guilds/:guildId/settings', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const settings = {};
+  for (const key of SETTINGS_KEYS) {
+    settings[key] = guildService.getServerConfig(guildId, key) || '';
+  }
+  res.json(settings);
+});
+
+router.post('/api/guilds/:guildId/settings', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  for (const key of SETTINGS_KEYS) {
+    if (req.body[key] !== undefined) {
+      guildService.setServerConfig(guildId, key, req.body[key]);
+    }
+  }
   res.json({ ok: true });
 });
 

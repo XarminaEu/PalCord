@@ -441,9 +441,71 @@ async function handlePalAbout(interaction) {
     .setColor(0x57f287)
     .addFields(
       { name: 'Version', value: '1.0.0', inline: true },
-      { name: 'Entwickler', value: 'RL-Dev.de', inline: true },
-      { name: 'Lizenz', value: 'Copyright geschützt', inline: true }
+      { name: __('about_developer'), value: 'RL-Dev.de', inline: true },
+      { name: __('about_license'), value: 'Copyright geschützt', inline: true }
     );
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+async function handlePalStats(interaction) {
+  const { guildId } = getGuildContext(interaction);
+  if (!guildId) {
+    await interaction.reply({ content: '❌ ' + __('cmd_guild_only'), ephemeral: true });
+    return;
+  }
+  const target = interaction.options.getUser('user') || interaction.user;
+  const dbPlayer = db.prepare('SELECT * FROM players WHERE guild_id = ? AND discord_id = ?').get(guildId, target.id);
+  if (!dbPlayer) {
+    await interaction.reply({ content: '❌ ' + __('stats_not_linked'), ephemeral: true });
+    return;
+  }
+  const playtime = playerService.formatPlaytime(dbPlayer.total_playtime || 0);
+  const embed = new EmbedBuilder()
+    .setTitle(__('stats_title'))
+    .setColor(0x3498db)
+    .addFields(
+      { name: __('user'), value: `<@${target.id}>`, inline: true },
+      { name: __('stats_userid'), value: dbPlayer.user_id || '-', inline: true },
+      { name: __('stats_level'), value: String(dbPlayer.level || 0), inline: true },
+      { name: __('stats_coins'), value: String(dbPlayer.coins || 0), inline: true },
+      { name: __('stats_playtime'), value: playtime, inline: true }
+    );
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+async function handlePalAnnounce(interaction) {
+  const ctx = await requireServer(interaction);
+  if (!ctx) return;
+  if (!isAdmin(interaction)) {
+    await interaction.reply({ content: __('error_admin_only'), ephemeral: true });
+    return;
+  }
+  const message = interaction.options.getString('message');
+  const result = await rconCommands.broadcast(ctx.server, message);
+  await interaction.reply({ content: result.success ? __('announce_success') : __('announce_failed', { error: result.error || 'Unknown' }), ephemeral: true });
+}
+
+async function handlePalRules(interaction) {
+  const { guildId } = getGuildContext(interaction);
+  if (!guildId) {
+    await interaction.reply({ content: '❌ ' + __('cmd_guild_only'), ephemeral: true });
+    return;
+  }
+  const newRules = interaction.options.getString('set');
+  if (newRules) {
+    if (!isAdmin(interaction)) {
+      await interaction.reply({ content: __('error_admin_only'), ephemeral: true });
+      return;
+    }
+    guildService.setServerConfig(guildId, 'rules', newRules);
+    await interaction.reply({ content: __('rules_set_success'), ephemeral: true });
+    return;
+  }
+  const rules = guildService.getServerConfig(guildId, 'rules');
+  const embed = new EmbedBuilder()
+    .setTitle('📜 ' + __('cmd_rules'))
+    .setDescription(rules || __('rules_not_set'))
+    .setColor(0x9b59b6);
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
@@ -899,6 +961,9 @@ module.exports = async function interactionCreateHandler(client, interaction) {
         case 'basesetup': return await handlePalBasesetup(interaction);
         case 'chatbridge': return await handlePalChatbridge(interaction);
         case 'about': return await handlePalAbout(interaction);
+        case 'stats': return await handlePalStats(interaction);
+        case 'announce': return await handlePalAnnounce(interaction);
+        case 'rules': return await handlePalRules(interaction);
       }
     }
 

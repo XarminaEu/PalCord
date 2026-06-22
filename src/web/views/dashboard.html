@@ -228,6 +228,7 @@
           <div class="tab ${activeTab === 'bases' ? 'active' : ''}" onclick="activeTab='bases';renderContent();">${T('bases')}</div>
           <div class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="activeTab='users';renderContent();">${T('users')}</div>
           <div class="tab ${activeTab === 'admin' ? 'active' : ''}" onclick="activeTab='admin';renderContent();">${T('admin')}</div>
+          <div class="tab ${activeTab === 'settings' ? 'active' : ''}" onclick="activeTab='settings';renderContent();">${T('settings')}</div>
         </div>
       ` : `
         <div class="tabs">
@@ -255,6 +256,7 @@
       else if (activeTab === 'bases') view = basesView();
       else if (activeTab === 'users') view = usersView();
       else if (activeTab === 'admin') view = adminView();
+      else if (activeTab === 'settings') view = settingsView();
       c.innerHTML = tabs + view;
 
       if (activeTab === 'server') loadServers();
@@ -264,6 +266,7 @@
       else if (activeTab === 'bases') loadBases();
       else if (activeTab === 'users') loadUsers();
       else if (activeTab === 'admin') loadAdmin();
+      else if (activeTab === 'settings') loadSettings();
     }
 
     function serversView() {
@@ -1137,6 +1140,57 @@
         body: JSON.stringify({ role }),
       });
       renderContent();
+    }
+
+    function settingsView() {
+      return `
+        <div class="section">
+          <h3>${T('settings')}</h3>
+          <form id="settings-form">
+            <label>${T('welcome_channel')}</label>
+            <input type="text" id="welcome_channel_id" placeholder="1234567890123456789">
+            <label>${T('auto_role')}</label>
+            <input type="text" id="auto_role_id" placeholder="1234567890123456789">
+            <label>${T('notification_channel')}</label>
+            <input type="text" id="notification_channel_id" placeholder="1234567890123456789">
+            <label>${T('daily_reminder_channel')}</label>
+            <input type="text" id="daily_reminder_channel_id" placeholder="1234567890123456789">
+            <label>${T('rules_config')}</label>
+            <textarea id="rules" rows="6" placeholder="Server-Regeln..."></textarea>
+            <button type="submit" class="btn">${T('save')}</button>
+          </form>
+        </div>
+      `;
+    }
+
+    async function loadSettings() {
+      const res = await fetch(`/api/guilds/${currentGuild}/settings`);
+      const settings = await res.json();
+      document.getElementById('welcome_channel_id').value = settings.welcome_channel_id || '';
+      document.getElementById('auto_role_id').value = settings.auto_role_id || '';
+      document.getElementById('notification_channel_id').value = settings.notification_channel_id || '';
+      document.getElementById('daily_reminder_channel_id').value = settings.daily_reminder_channel_id || '';
+      document.getElementById('rules').value = settings.rules || '';
+      document.getElementById('settings-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const body = {
+          welcome_channel_id: document.getElementById('welcome_channel_id').value.trim(),
+          auto_role_id: document.getElementById('auto_role_id').value.trim(),
+          notification_channel_id: document.getElementById('notification_channel_id').value.trim(),
+          daily_reminder_channel_id: document.getElementById('daily_reminder_channel_id').value.trim(),
+          rules: document.getElementById('rules').value.trim(),
+        };
+        const res = await fetch(`/api/guilds/${currentGuild}/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          alert(T('settings_saved'));
+        } else {
+          alert(T('error'));
+        }
+      });
     }
 
     function escapeHtml(text) {

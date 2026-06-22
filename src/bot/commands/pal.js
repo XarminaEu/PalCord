@@ -172,6 +172,27 @@ const data = new SlashCommandBuilder()
       .setName('about')
       .setDescription(l10n('cmd_about')['en-US'])
       .setDescriptionLocalizations(l10n('cmd_about'))
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('stats')
+      .setDescription(l10n('cmd_stats')['en-US'])
+      .setDescriptionLocalizations(l10n('cmd_stats'))
+      .addUserOption(opt => opt.setName('user').setDescription('Discord user (optional)').setDescriptionLocalizations({ 'de': 'Discord User (optional)', 'en-US': 'Discord user (optional)' }).setRequired(false))
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('announce')
+      .setDescription(l10n('cmd_announce')['en-US'])
+      .setDescriptionLocalizations(l10n('cmd_announce'))
+      .addStringOption(opt => opt.setName('message').setDescription('Message to announce').setDescriptionLocalizations({ 'de': 'Nachricht für Broadcast', 'en-US': 'Message to announce' }).setRequired(true))
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('rules')
+      .setDescription(l10n('cmd_rules')['en-US'])
+      .setDescriptionLocalizations(l10n('cmd_rules'))
+      .addStringOption(opt => opt.setName('set').setDescription('New rules text (admin only)').setDescriptionLocalizations({ 'de': 'Neue Regeln (nur Admin)', 'en-US': 'New rules text (admin only)' }).setRequired(false))
   );
 
 module.exports = {

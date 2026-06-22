@@ -3,6 +3,7 @@ const config = require('../config');
 const readyHandler = require('./handlers/ready');
 const interactionHandler = require('./handlers/interactionCreate');
 const chatbridgeHandler = require('./handlers/chatbridge');
+const eventHandlers = require('./handlers/events');
 const guildService = require('../services/guildService');
 const logger = require('../logger');
 
@@ -19,6 +20,7 @@ const client = new Client({
 client.once('clientReady', () => readyHandler(client));
 client.on('interactionCreate', (interaction) => interactionHandler(client, interaction));
 client.on('messageCreate', (message) => chatbridgeHandler(client, message));
+client.on('guildMemberAdd', (member) => eventHandlers.handleGuildMemberAdd(member));
 client.on('guildCreate', (guild) => {
   logger.info(`Joined guild: ${guild.name} (${guild.id})`);
   guildService.ensureGuild(guild.id, guild.name, guild.ownerId);
@@ -45,6 +47,7 @@ client.on('warn', (warn) => logger.warn(`Discord client warning: ${warn}`));
 
 async function start() {
   await client.login(config.discord.token);
+  eventHandlers.startDailyReminderScheduler(client);
 }
 
 module.exports = {

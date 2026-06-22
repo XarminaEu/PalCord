@@ -69,11 +69,24 @@
     }
     .feature strong { color: #57f287; display: block; margin-bottom: 0.25rem; }
     .feature small { color: #a0a0a0; }
+    .section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      text-align: left;
+    }
+    .section h2 { color: #57f287; margin-bottom: 1rem; font-size: 1.25rem; }
+    .status-box { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .status-box div { color: #a0a0a0; }
+    .status-box strong { color: #fff; }
+    .cmd-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .cmd-list div { background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 4px; font-size: 0.9rem; }
+    .faq-item { margin-bottom: 1rem; }
+    .faq-item strong { color: #fff; display: block; margin-bottom: 0.25rem; }
+    .faq-item p { color: #a0a0a0; font-size: 0.95rem; margin: 0; }
     .copyright {
-      position: fixed;
-      bottom: 1rem;
-      left: 0;
-      right: 0;
+      margin-top: 2rem;
       text-align: center;
       color: #a0a0a0;
       font-size: 0.85rem;
@@ -103,6 +116,42 @@
         <small id="feat-players-desc">Spieler, Plattform und Spielzeit übersichtlich.</small>
       </div>
     </div>
+    <div class="section">
+      <h2 id="public-status-title">Server Status</h2>
+      <div id="public-status" class="status-box">
+        <div>Loading...</div>
+      </div>
+    </div>
+    <div class="section">
+      <h2 id="cmd-list-title">Befehle</h2>
+      <div class="cmd-list" id="cmd-list">
+        <div><code>/pal server</code> — Server-Status</div>
+        <div><code>/pal players</code> — Spielerliste</div>
+        <div><code>/pal shop</code> — Shop</div>
+        <div><code>/pal balance</code> — Coins</div>
+        <div><code>/pal link</code> — Account verknüpfen</div>
+        <div><code>/pal daily</code> — Tägliche Belohnung</div>
+        <div><code>/pal pay</code> — Coins senden</div>
+        <div><code>/pal stats</code> — Statistiken</div>
+        <div><code>/pal base</code> — Basen verwalten</div>
+        <div><code>/pal rules</code> — Regeln</div>
+      </div>
+    </div>
+    <div class="section">
+      <h2 id="faq-title">FAQ</h2>
+      <div class="faq-item">
+        <strong id="faq-link">Wie verknüpfe ich meinen Account?</strong>
+        <p id="faq-link-answer">Nutze <code>/pal link &lt;UserId&gt;</code> im Discord.</p>
+      </div>
+      <div class="faq-item">
+        <strong id="faq-coins">Wie bekomme ich Coins?</strong>
+        <p id="faq-coins-answer">Hol dir täglich <code>/pal daily</code> oder lass dir Coins senden.</p>
+      </div>
+      <div class="faq-item">
+        <strong id="faq-admin">Wer ist Admin?</strong>
+        <p id="faq-admin-answer">Discord-Administratoren und der Global Admin.</p>
+      </div>
+    </div>
     <div class="copyright">PalCord &copy; 2026 RL-Dev.de</div>
   </div>
   <script>
@@ -126,12 +175,41 @@
       document.getElementById('feat-shop-desc').textContent = T.feat_shop_desc || 'Items, Pals und Eier mit Coins verkaufen.';
       document.getElementById('feat-players-title').textContent = T.players || 'Spieler';
       document.getElementById('feat-players-desc').textContent = T.feat_players_desc || 'Spieler, Plattform und Spielzeit übersichtlich.';
+      document.getElementById('public-status-title').textContent = T.public_status_title || 'Server Status';
+      document.getElementById('cmd-list-title').textContent = T.cmd_list_title || 'Befehle';
+      document.getElementById('faq-title').textContent = T.faq_title || 'FAQ';
+      document.getElementById('faq-link').textContent = T.faq_link || 'Wie verknüpfe ich meinen Account?';
+      document.getElementById('faq-link-answer').textContent = T.faq_link_answer || 'Nutze /pal link <UserId> im Discord.';
+      document.getElementById('faq-coins').textContent = T.faq_coins || 'Wie bekomme ich Coins?';
+      document.getElementById('faq-coins-answer').textContent = T.faq_coins_answer || 'Hol dir täglich /pal daily oder lass dir Coins senden.';
+      document.getElementById('faq-admin').textContent = T.faq_admin || 'Wer ist Admin?';
+      document.getElementById('faq-admin-answer').textContent = T.faq_admin_answer || 'Discord-Administratoren und der Global Admin.';
+    }
+    async function loadPublicStatus() {
+      try {
+        const res = await fetch('/api/public/status');
+        const data = await res.json();
+        const box = document.getElementById('public-status');
+        if (data.error) {
+          box.innerHTML = `<div>${T.public_status_no_server || 'Kein öffentlicher Server konfiguriert.'}</div>`;
+          return;
+        }
+        const statusText = data.isOnline ? (T.public_status_online || '🟢 Online') : (T.public_status_offline || '🔴 Offline');
+        box.innerHTML = `
+          <div><strong>${data.name || 'Server'}</strong><br>${statusText}</div>
+          <div>${T.public_status_players || 'Spieler'}: <strong>${data.currentPlayers}/${data.maxPlayers}</strong></div>
+          <div>${T.public_status_address || 'Adresse'}: <strong>${data.address}</strong></div>
+        `;
+      } catch (err) {
+        document.getElementById('public-status').innerHTML = `<div>${T.public_status_no_server || 'Kein öffentlicher Server konfiguriert.'}</div>`;
+      }
     }
     async function setLang(lang) {
       await fetch('/api/lang', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }) });
       loadLang();
     }
     loadLang();
+    loadPublicStatus();
   </script>
 </body>
 </html>

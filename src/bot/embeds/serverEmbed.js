@@ -3,6 +3,7 @@ const serverStatusService = require('../../services/serverStatusService');
 const guildService = require('../../services/guildService');
 const baseService = require('../../services/baseService');
 const logger = require('../../logger');
+const eventHandlers = require('../handlers/events');
 
 const guildState = new Map();
 
@@ -96,6 +97,7 @@ async function updateStatusEmbed(client, guildId) {
     }
 
     const status = await serverStatusService.getStatus(guildId, server);
+    eventHandlers.checkStatusNotifications(client, guildId, status).catch(() => {});
     const embed = buildServerEmbed(status, server.name, guildId);
     const buttons = buildServerButtons(guildId);
 
