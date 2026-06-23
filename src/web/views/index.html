@@ -344,26 +344,47 @@
     }
     async function openModal(url) {
       try {
-        const res = await fetch(url);
-        const html = await res.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const content = doc.querySelector('.container');
         const modalContent = document.getElementById('modal-content');
-        modalContent.innerHTML = content ? content.innerHTML : '<p>Content not found.</p>';
-        const langSwitch = modalContent.querySelector('.lang-switch');
-        if (langSwitch) langSwitch.remove();
-        const backLink = modalContent.querySelector('.footer a');
-        if (backLink) {
-          backLink.textContent = T.back_to_home || 'Zurück zur Startseite';
-          backLink.href = '#';
-          backLink.onclick = (e) => { e.preventDefault(); closeModal(); };
+        if (url === '/imprint') {
+          const res = await fetch('/api/imprint');
+          const data = await res.json();
+          modalContent.innerHTML = buildImprintHtml(data);
+        } else {
+          const res = await fetch(url);
+          const html = await res.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const content = doc.querySelector('.container');
+          modalContent.innerHTML = content ? content.innerHTML : '<p>Content not found.</p>';
+          const langSwitch = modalContent.querySelector('.lang-switch');
+          if (langSwitch) langSwitch.remove();
+          const backLink = modalContent.querySelector('.footer a');
+          if (backLink) {
+            backLink.textContent = T.back_to_home || 'Zurück zur Startseite';
+            backLink.href = '#';
+            backLink.onclick = (e) => { e.preventDefault(); closeModal(); };
+          }
         }
         document.getElementById('modal-overlay').classList.add('open');
         document.body.style.overflow = 'hidden';
       } catch (err) {
         alert('Fehler beim Laden: ' + err.message);
       }
+    }
+    function buildImprintHtml(data) {
+      const lines = [data.name, data.address, data.city, data.country].filter(Boolean);
+      const address = lines.length ? lines.join('<br>') : (T.imprint_not_configured || 'Impressum noch nicht konfiguriert.');
+      const email = data.email ? `<a href="mailto:${data.email}">${data.email}</a>` : '';
+      return `
+        <h1>${T.imprint_title || 'Impressum'}</h1>
+        <h2>${T.imprint_responsible || 'Verantwortlich für den Inhalt'}</h2>
+        <p>${address}</p>
+        <h2>${T.imprint_legal || 'Angaben gemäß § 5 TMG'}</h2>
+        <p>${T.imprint_legal_text || 'Diese Website wird von der oben genannten Person betrieben.'}</p>
+        <h2>${T.imprint_contact || 'Kontakt'}</h2>
+        <p>${T.imprint_email || 'E-Mail'}: ${email || '-'}</p>
+        <div class="footer"><a href="#" onclick="closeModal(); return false;">${T.back_to_home || 'Zurück zur Startseite'}</a></div>
+      `;
     }
     function closeModal(e) {
       if (e && e.target !== document.getElementById('modal-overlay') && e.target.className !== 'modal-close') return;
