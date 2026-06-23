@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impressum - PalCord</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f1a;
+      --bg-2: #1a1a2e;
+      --card: rgba(22, 33, 62, 0.75);
+      --accent: #5865f2;
+      --accent-2: #57f287;
+      --text: #ffffff;
+      --muted: #a0a0a0;
+      --border: rgba(255,255,255,0.1);
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(-45deg, #0f0f1a, #1a1a2e, #16213e, #0f3460);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .lang-switch {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+    .lang-switch button {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.9rem;
+      border-radius: 20px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .lang-switch button:hover { background: rgba(88, 101, 242, 0.2); }
+    .lang-switch button.active { background: var(--accent); border-color: var(--accent); }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      backdrop-filter: blur(12px);
+    }
+    h1 { color: var(--accent-2); margin-bottom: 1.5rem; font-size: 2rem; }
+    h2 { color: var(--accent); margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.25rem; }
+    p { color: var(--muted); margin-bottom: 1rem; }
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .footer { margin-top: 2rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
+    .address { color: var(--muted); line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <div class="lang-switch">
+    <button data-lang="de" onclick="setLang('de')">DE</button>
+    <button data-lang="en" onclick="setLang('en')">EN</button>
+  </div>
+  <div class="container">
+    <h1 id="title">Impressum</h1>
+
+    <h2 id="responsible-title">Verantwortlich für den Inhalt</h2>
+    <div class="address" id="imprint-address">
+      Lade Impressum...
+    </div>
+
+    <h2 id="legal-title">Angaben gemäß § 5 TMG</h2>
+    <p id="legal-text">Diese Website wird von der oben genannten Person betrieben.</p>
+
+    <h2 id="contact-title">Kontakt</h2>
+    <p id="contact-text">E-Mail: <a id="email-link" href="mailto:"></a></p>
+
+    <div class="footer"><a href="/" id="back">Zurück zur Startseite</a></div>
+  </div>
+  <script>
+    let T = {};
+    async function loadLang() {
+      const res = await fetch('/api/lang');
+      const data = await res.json();
+      T = data.translations;
+      document.querySelectorAll('.lang-switch button').forEach(b => b.classList.toggle('active', b.dataset.lang === data.lang));
+      document.documentElement.lang = data.lang;
+      await loadImprint();
+      applyText();
+    }
+    async function loadImprint() {
+      const res = await fetch('/api/imprint');
+      const data = await res.json();
+      const address = document.getElementById('imprint-address');
+      const emailLink = document.getElementById('email-link');
+      if (!data.name) {
+        address.textContent = T.imprint_not_configured || 'Impressum noch nicht konfiguriert.';
+        emailLink.textContent = '';
+        emailLink.href = 'mailto:';
+        return;
+      }
+      address.innerHTML = [
+        data.name,
+        data.address,
+        data.city,
+        data.country
+      ].filter(Boolean).join('<br>');
+      if (data.email) {
+        emailLink.textContent = data.email;
+        emailLink.href = 'mailto:' + data.email;
+      } else {
+        emailLink.textContent = '';
+        emailLink.href = 'mailto:';
+      }
+    }
+    function applyText() {
+      document.title = (T.imprint_title || 'Impressum') + ' - PalCord';
+      document.getElementById('title').textContent = T.imprint_title || 'Impressum';
+      document.getElementById('responsible-title').textContent = T.imprint_responsible || 'Verantwortlich für den Inhalt';
+      document.getElementById('legal-title').textContent = T.imprint_legal || 'Angaben gemäß § 5 TMG';
+      document.getElementById('legal-text').textContent = T.imprint_legal_text || 'Diese Website wird von der oben genannten Person betrieben.';
+      document.getElementById('contact-title').textContent = T.imprint_contact || 'Kontakt';
+      document.getElementById('contact-text').innerHTML = (T.imprint_email || 'E-Mail') + ': <a id="email-link" href="mailto:"></a>';
+      document.getElementById('back').textContent = T.back_to_home || 'Zurück zur Startseite';
+      loadImprint();
+    }
+    async function setLang(lang) {
+      await fetch('/api/lang', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }) });
+      loadLang();
+    }
+    loadLang();
+  </script>
+</body>
+</html>

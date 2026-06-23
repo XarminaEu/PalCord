@@ -26,4 +26,11 @@ module.exports = {
   },
   globalAdminId: process.env.GLOBAL_ADMIN_ID || '1482263697131835413',
   logLevel: process.env.LOG_LEVEL || 'info',
+  imprint: {
+    name: process.env.IMPRINT_NAME || '',
+    address: process.env.IMPRINT_ADDRESS || '',
+    city: process.env.IMPRINT_CITY || '',
+    country: process.env.IMPRINT_COUNTRY || '',
+    email: process.env.IMPRINT_EMAIL || '',
+  },
 };

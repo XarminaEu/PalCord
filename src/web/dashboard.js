@@ -59,6 +59,10 @@ router.get('/privacy', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'privacy.html'));
 });
 
+router.get('/imprint', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'imprint.html'));
+});
+
 router.get('/api/public/status', async (req, res) => {
   try {
     const anyServer = db.prepare('SELECT * FROM guild_servers WHERE is_active = 1 LIMIT 1').get();
@@ -199,6 +203,10 @@ router.get('/api/guilds/:guildId/roles', ensureAuthenticated, (req, res) => {
     logger.error(`Roles error: ${err.message}`);
     res.status(500).json({ error: err.message });
   }
+});
+
+router.get('/api/imprint', (req, res) => {
+  res.json(config.imprint);
 });
 
 router.get('/api/guilds/:guildId/settings', ensureAuthenticated, (req, res) => {

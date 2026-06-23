@@ -252,4 +252,11 @@ module.exports = {
   privacy_cookies: '5. Cookies',
   privacy_cookies_text: 'The dashboard uses session cookies for login and a language cookie.',
   back_to_home: 'Back to home',
+  imprint_title: 'Imprint',
+  imprint_responsible: 'Responsible for content',
+  imprint_legal: 'Legal notice according to § 5 TMG',
+  imprint_legal_text: 'This website is operated by the person named above.',
+  imprint_contact: 'Contact',
+  imprint_email: 'Email',
+  imprint_not_configured: 'Imprint not configured yet.',
 };

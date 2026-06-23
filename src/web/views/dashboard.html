@@ -206,6 +206,7 @@
   </div>
   <footer style="position:fixed;bottom:0;left:0;right:0;text-align:center;padding:0.6rem;background:rgba(15,15,35,0.8);backdrop-filter:blur(10px);color:var(--muted);font-size:0.8rem;z-index:100;border-top:1px solid var(--border);">
     PalCord &copy; 2026 RL-Dev.de &bull;
+    <a href="/imprint" id="footer-imprint" style="color:var(--muted);text-decoration:none;">Impressum</a> &bull;
     <a href="/terms" id="footer-terms" style="color:var(--muted);text-decoration:none;">Nutzungsbedingungen</a> &bull;
     <a href="/privacy" id="footer-privacy" style="color:var(--muted);text-decoration:none;">Datenschutz</a>
   </footer>
@@ -1289,6 +1290,7 @@
       document.getElementById('welcome-title').textContent = T('welcome');
       document.getElementById('welcome-text').textContent = T('select_server_hint');
       document.getElementById('logout-link').textContent = T('logout');
+      document.getElementById('footer-imprint').textContent = T('imprint_title');
       document.getElementById('footer-terms').textContent = T('terms_title');
       document.getElementById('footer-privacy').textContent = T('privacy_title');
       document.title = `${T('app_name')} ${T('dashboard')}`;

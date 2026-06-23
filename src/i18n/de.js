@@ -252,4 +252,11 @@ module.exports = {
   privacy_cookies: '5. Cookies',
   privacy_cookies_text: 'Das Dashboard verwendet Session-Cookies für den Login und ein Sprach-Cookie für die Spracheinstellung.',
   back_to_home: 'Zurück zur Startseite',
+  imprint_title: 'Impressum',
+  imprint_responsible: 'Verantwortlich für den Inhalt',
+  imprint_legal: 'Angaben gemäß § 5 TMG',
+  imprint_legal_text: 'Diese Website wird von der oben genannten Person betrieben.',
+  imprint_contact: 'Kontakt',
+  imprint_email: 'E-Mail',
+  imprint_not_configured: 'Impressum noch nicht konfiguriert.',
 };
