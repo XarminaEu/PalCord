@@ -50,6 +50,7 @@ Open the dashboard at `http://your-domain:5996/` or use the public instance at *
 ## Documentation
 
 - **[Installation Guide](install.md)** - Step-by-step setup instructions.
+- **[Run as a Service](service.md)** - Linux systemd and Windows service setup.
 - **[Environment Variables](.env.example)** - Full configuration reference.
 
 ---
