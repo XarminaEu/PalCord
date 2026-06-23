@@ -261,12 +261,14 @@
     let currentUser = null;
     let currentGuild = null;
     let currentGuildData = null;
+    let isGlobalAdmin = false;
     let activeTab = 'server';
 
     async function loadMe() {
       const res = await fetch('/api/me');
       const data = await res.json();
       currentUser = data.user;
+      isGlobalAdmin = data.isGlobalAdmin;
       document.getElementById('user-name').textContent = data.user.username;
       const avatar = data.user.avatar
         ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
@@ -332,11 +334,13 @@
       if (!currentGuildData.isAdmin) {
         if (!['status', 'bases'].includes(activeTab)) activeTab = 'status';
       }
+      if (!isGlobalAdmin && activeTab === 'data') activeTab = 'server';
     }
 
     function renderContent() {
       const c = document.getElementById('content');
       const isAdmin = currentGuildData.isAdmin;
+      const dataTab = isGlobalAdmin ? `<div class="tab ${activeTab === 'data' ? 'active' : ''}" onclick="activeTab='data';renderContent();">${T('data')}</div>` : '';
       const tabs = isAdmin ? `
         <div class="tabs">
           <div class="tab ${activeTab === 'server' ? 'active' : ''}" onclick="activeTab='server';renderContent();">${T('server')}</div>
@@ -347,6 +351,7 @@
           <div class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="activeTab='users';renderContent();">${T('users')}</div>
           <div class="tab ${activeTab === 'admin' ? 'active' : ''}" onclick="activeTab='admin';renderContent();">${T('admin')}</div>
           <div class="tab ${activeTab === 'settings' ? 'active' : ''}" onclick="activeTab='settings';renderContent();">${T('settings')}</div>
+          ${dataTab}
         </div>
       ` : `
         <div class="tabs">
@@ -375,6 +380,7 @@
       else if (activeTab === 'users') view = usersView();
       else if (activeTab === 'admin') view = adminView();
       else if (activeTab === 'settings') view = settingsView();
+      else if (activeTab === 'data') view = dataView();
       c.innerHTML = tabs + view;
 
       if (activeTab === 'server') loadServers();
@@ -385,6 +391,7 @@
       else if (activeTab === 'users') loadUsers();
       else if (activeTab === 'admin') loadAdmin();
       else if (activeTab === 'settings') loadSettings();
+      else if (activeTab === 'data') loadDataImport();
     }
 
     function serversView() {
@@ -1323,6 +1330,81 @@
           alert(T('error'));
         }
       });
+    }
+
+    function dataView() {
+      return `
+        <div class="section">
+          <h3>${T('import_data')}</h3>
+          <div class="grid" id="data-counts">
+            <div class="card"><div class="icon">📦</div><label>${T('import_items_count')}</label><div class="value" id="count-items">-</div></div>
+            <div class="card"><div class="icon">🐾</div><label>${T('import_pals_count')}</label><div class="value" id="count-pals">-</div></div>
+            <div class="card"><div class="icon">🔧</div><label>${T('import_technologies_count')}</label><div class="value" id="count-technologies">-</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <h3>${T('import_items')}</h3>
+          <textarea id="import-items-json" rows="6" placeholder="{ \"items\": [{ \"id\": \"...\", \"name\": \"...\" }] }"></textarea>
+          <button class="btn" onclick="submitImport('items')">${T('import')}</button>
+        </div>
+        <div class="section">
+          <h3>${T('import_pals')}</h3>
+          <textarea id="import-pals-json" rows="6" placeholder="{ \"pals\": [{ \"id\": \"...\", \"name\": \"...\" }] }"></textarea>
+          <button class="btn" onclick="submitImport('pals')">${T('import')}</button>
+        </div>
+        <div class="section">
+          <h3>${T('import_technologies')}</h3>
+          <textarea id="import-technologies-json" rows="6" placeholder="{ \"technology\": [{ \"name\": \"...\", \"asset\": \"...\" }] }"></textarea>
+          <button class="btn" onclick="submitImport('technologies')">${T('import')}</button>
+        </div>
+        <div class="section">
+          <h3>${T('import_from_files')}</h3>
+          <p style="color:var(--muted);">Data/itemdata.json, Data/paldata.json, Data/techdata.json</p>
+          <button class="btn" onclick="submitReseed()">${T('reseed')}</button>
+        </div>
+      `;
+    }
+
+    async function loadDataImport() {
+      const res = await fetch('/api/data/counts');
+      const counts = await res.json();
+      document.getElementById('count-items').textContent = counts.items;
+      document.getElementById('count-pals').textContent = counts.pals;
+      document.getElementById('count-technologies').textContent = counts.technologies;
+    }
+
+    async function submitImport(type) {
+      const textarea = document.getElementById('import-' + type + '-json');
+      let json;
+      try {
+        json = JSON.parse(textarea.value);
+      } catch (err) {
+        alert('Invalid JSON');
+        return;
+      }
+      const res = await fetch('/api/data/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(json),
+      });
+      if (res.ok) {
+        alert(T('import_success'));
+        textarea.value = '';
+        loadDataImport();
+      } else {
+        alert(T('import_failed'));
+      }
+    }
+
+    async function submitReseed() {
+      if (!confirm('Reload from files?')) return;
+      const res = await fetch('/api/data/reseed', { method: 'POST' });
+      if (res.ok) {
+        alert(T('import_success'));
+        loadDataImport();
+      } else {
+        alert(T('import_failed'));
+      }
     }
 
     function escapeHtml(text) {

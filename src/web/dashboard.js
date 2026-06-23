@@ -13,6 +13,7 @@ const logger = require('../logger');
 const { client: discordClient } = require('../bot/client');
 const router = express.Router();
 const copyrightService = require('../services/copyrightService');
+const dataImportService = require('../services/dataImportService');
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
@@ -207,6 +208,36 @@ router.get('/api/guilds/:guildId/roles', ensureAuthenticated, (req, res) => {
 
 router.get('/api/imprint', (req, res) => {
   res.json(config.imprint);
+});
+
+router.get('/api/data/counts', (req, res) => {
+  res.json(dataImportService.getCounts());
+});
+
+router.post('/api/data/import', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const { items, pals, technology } = req.body;
+    const result = { items: 0, pals: 0, technologies: 0 };
+    if (items && Array.isArray(items)) result.items = dataImportService.importItems(items);
+    if (pals && Array.isArray(pals)) result.pals = dataImportService.importPals(pals);
+    if (technology && Array.isArray(technology)) result.technologies = dataImportService.importTechnologies(technology);
+    res.json({ ok: true, result, counts: dataImportService.getCounts() });
+  } catch (err) {
+    logger.error(`Data import error: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/api/data/reseed', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const result = dataImportService.importFromFiles();
+    res.json({ ok: true, result, counts: dataImportService.getCounts() });
+  } catch (err) {
+    logger.error(`Reseed error: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.get('/api/guilds/:guildId/settings', ensureAuthenticated, (req, res) => {
