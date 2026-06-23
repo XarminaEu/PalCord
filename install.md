@@ -80,12 +80,15 @@ Login with Discord. You will only see Discord guilds where you are a member and 
    ```
    http://your-domain:5996/auth/discord/callback
    ```
+   *(Use your own domain or the public instance URL.)*
 5. Copy the `DISCORD_CLIENT_SECRET` into your `.env` file.
 6. Under **General Information**, set:
-   - **Terms of Service URL**: `https://palcord.run.place/terms`
-   - **Privacy Policy URL**: `https://palcord.run.place/privacy`
+   - **Terms of Service URL**: `http://your-domain:5996/terms`
+   - **Privacy Policy URL**: `http://your-domain:5996/privacy`
    - **Interactions Endpoint URL**: leave empty (PalCord uses the Gateway bot)
    - **Linked Roles Verification URL**: leave empty (not used)
+
+> If you use the public hosted version at **[https://palcord.run.place/](https://palcord.run.place/)**, use `https://palcord.run.place/auth/discord/callback` as redirect URL.
 
 ## Bot Permissions
 

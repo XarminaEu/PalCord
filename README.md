@@ -60,15 +60,17 @@ Open the dashboard at `http://your-domain:5996/` or use the public instance at *
 2. Select your application.
 3. Go to **OAuth2 → General** and add the redirect URL:
    ```
-   https://palcord.run.place/auth/discord/callback
+   http://your-domain:5996/auth/discord/callback
    ```
-   *(Replace with your own domain if self-hosting.)*
+   *(Use your own domain or the public instance URL.)*
 4. Copy `DISCORD_CLIENT_SECRET` into your `.env` file.
 5. Under **General Information**, set:
-   - **Terms of Service URL**: `https://palcord.run.place/terms`
-   - **Privacy Policy URL**: `https://palcord.run.place/privacy`
+   - **Terms of Service URL**: `http://your-domain:5996/terms`
+   - **Privacy Policy URL**: `http://your-domain:5996/privacy`
    - **Interactions Endpoint URL**: leave empty (PalCord uses the Gateway bot)
    - **Linked Roles Verification URL**: leave empty (not used)
+
+> If you use the public hosted version at **[https://palcord.run.place/](https://palcord.run.place/)**, use `https://palcord.run.place/auth/discord/callback` as redirect URL.
 
 ---
 
