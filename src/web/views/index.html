@@ -185,6 +185,52 @@
       color: var(--muted);
       font-size: 0.85rem;
     }
+    .copyright a { cursor: pointer; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 2.5rem;
+      position: relative;
+      box-shadow: var(--shadow);
+    }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover { background: rgba(237, 66, 69, 0.3); }
+    .modal-content h1 { color: var(--accent-2); margin-bottom: 1rem; }
+    .modal-content h2 { color: var(--accent); margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .modal-content p { color: var(--muted); margin-bottom: 1rem; }
+    .modal-content a { color: var(--accent-2); }
     @media (max-width: 600px) {
       .hero h1 { font-size: 2.5rem; }
       .hero p { font-size: 1rem; }
@@ -254,9 +300,9 @@
     </div>
     <div class="copyright">
       PalCord &copy; 2026 RL-Dev.de &bull;
-      <a href="/imprint" style="color:var(--muted);" id="footer-imprint">Impressum</a> &bull;
-      <a href="/terms" style="color:var(--muted);" id="footer-terms">Nutzungsbedingungen</a> &bull;
-      <a href="/privacy" style="color:var(--muted);" id="footer-privacy">Datenschutz</a>
+      <a style="color:var(--muted);" id="footer-imprint" onclick="openModal('/imprint')">Impressum</a> &bull;
+      <a style="color:var(--muted);" id="footer-terms" onclick="openModal('/terms')">Nutzungsbedingungen</a> &bull;
+      <a style="color:var(--muted);" id="footer-privacy" onclick="openModal('/privacy')">Datenschutz</a>
     </div>
   </div>
   <script>
@@ -296,7 +342,43 @@
       await fetch('/api/lang', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }) });
       loadLang();
     }
+    async function openModal(url) {
+      try {
+        const res = await fetch(url);
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const content = doc.querySelector('.container');
+        const modalContent = document.getElementById('modal-content');
+        modalContent.innerHTML = content ? content.innerHTML : '<p>Content not found.</p>';
+        const langSwitch = modalContent.querySelector('.lang-switch');
+        if (langSwitch) langSwitch.remove();
+        const backLink = modalContent.querySelector('.footer a');
+        if (backLink) {
+          backLink.textContent = T.back_to_home || 'Zurück zur Startseite';
+          backLink.href = '#';
+          backLink.onclick = (e) => { e.preventDefault(); closeModal(); };
+        }
+        document.getElementById('modal-overlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+      } catch (err) {
+        alert('Fehler beim Laden: ' + err.message);
+      }
+    }
+    function closeModal(e) {
+      if (e && e.target !== document.getElementById('modal-overlay') && e.target.className !== 'modal-close') return;
+      document.getElementById('modal-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
     loadLang();
   </script>
+
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <div class="modal-content" id="modal-content"></div>
+    </div>
+  </div>
 </body>
 </html>
