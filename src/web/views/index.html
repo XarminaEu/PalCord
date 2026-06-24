@@ -80,6 +80,16 @@
       margin: 0 auto 2rem;
       line-height: 1.6;
     }
+    .logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 1rem;
+      border-radius: 24px;
+      box-shadow: 0 0 40px rgba(87, 242, 135, 0.2);
+      object-fit: contain;
+      background: var(--card);
+      border: 1px solid var(--border);
+    }
     .btn {
       display: inline-flex;
       align-items: center;
@@ -245,6 +255,7 @@
   </div>
   <div class="container">
     <div class="hero">
+      <img src="/static/logonotrans.png" class="logo" alt="PalCord Logo">
       <h1>Pal<span>Cord</span></h1>
       <p id="subtitle">Discord Login mit deiner Discord-ID. Verwalte deine Palworld-Server, den Shop und deine Spieler.</p>
       <a href="/auth/discord" class="btn" id="login-btn">Mit Discord einloggen</a>

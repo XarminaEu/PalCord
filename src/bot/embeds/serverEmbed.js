@@ -4,6 +4,9 @@ const guildService = require('../../services/guildService');
 const baseService = require('../../services/baseService');
 const logger = require('../../logger');
 const eventHandlers = require('../handlers/events');
+const config = require('../../config');
+
+const LOGO_URL = `${config.app.url}/static/logonotrans.png`;
 
 const guildState = new Map();
 
@@ -19,7 +22,7 @@ function buildServerEmbed(status, serverName, guildId) {
     .setTitle(`🎮 ${status.name || serverName}`)
     .setDescription('**Server Status**')
     .setColor(status.isOnline ? 0x57f287 : 0xed4245)
-    .setThumbnail(status.emblemUrl || null)
+    .setThumbnail(status.emblemUrl || LOGO_URL)
     .addFields(
       { name: 'Status', value: status.isOnline ? '🟢 Online' : '🔴 Offline', inline: true },
       { name: 'Spieler', value: `${status.currentPlayers}/${status.maxPlayers}`, inline: true },
@@ -52,7 +55,7 @@ function buildServerEmbed(status, serverName, guildId) {
     { name: '🛡️ Bans', value: (status.bansCount || 0).toString(), inline: true }
   );
 
-  embed.setFooter({ text: 'Auto-updates alle 60s • Klicke auf Spielerliste für Details' });
+  embed.setFooter({ text: 'Auto-updates alle 60s • Klicke auf Spielerliste für Details', iconURL: LOGO_URL });
 
   return embed;
 }

@@ -1,11 +1,23 @@
 const config = require('../../config');
 const guildService = require('../../services/guildService');
 const logger = require('../../logger');
+const path = require('path');
+const fs = require('fs');
 const { startStatusUpdates } = require('../embeds/serverEmbed');
 const { startBasesEmbedUpdate } = require('../embeds/baseEmbed');
 
 module.exports = async function readyHandler(client) {
   logger.info(`Bot logged in as ${client.user.tag}`);
+
+  const logoPath = path.join(__dirname, '..', '..', '..', 'logonotrans.png');
+  if (fs.existsSync(logoPath)) {
+    try {
+      await client.user.setAvatar(logoPath);
+      logger.info('Bot avatar updated to logo.');
+    } catch (err) {
+      logger.warn(`Failed to set bot avatar: ${err.message}`);
+    }
+  }
 
   if (!config.discord.guildId) {
     logger.warn('DISCORD_GUILD_ID not set. Commands will not be registered.');
