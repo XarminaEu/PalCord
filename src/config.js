@@ -43,6 +43,7 @@ module.exports = {
     businessRegistration: process.env.IMPRINT_BUSINESS_REGISTRATION || '',
     responsiblePerson: process.env.IMPRINT_RESPONSIBLE_PERSON || '',
     disclaimer: process.env.IMPRINT_DISCLAIMER || '',
+    disclaimerEn: process.env.IMPRINT_DISCLAIMER_EN || '',
     platformLink: process.env.IMPRINT_PLATFORM_LINK || 'https://ec.europa.eu/consumers/odr/',
   },
 };

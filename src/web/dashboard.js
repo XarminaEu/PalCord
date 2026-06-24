@@ -248,7 +248,21 @@ router.get('/api/guilds/:guildId/roles', ensureAuthenticated, async (req, res) =
 });
 
 router.get('/api/imprint', (req, res) => {
-  res.json(config.imprint);
+  const lang = req.query.lang || req.cookies?.lang || 'de';
+  const isEn = lang === 'en';
+  res.json({
+    name: config.imprint.name,
+    address: config.imprint.address,
+    city: config.imprint.city,
+    country: config.imprint.country,
+    email: config.imprint.email,
+    phone: config.imprint.phone,
+    vatId: config.imprint.vatId,
+    businessRegistration: config.imprint.businessRegistration,
+    responsiblePerson: config.imprint.responsiblePerson,
+    disclaimer: (isEn && config.imprint.disclaimerEn) ? config.imprint.disclaimerEn : config.imprint.disclaimer,
+    platformLink: config.imprint.platformLink,
+  });
 });
 
 router.get('/api/data/counts', (req, res) => {

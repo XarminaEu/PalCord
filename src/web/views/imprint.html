@@ -117,7 +117,8 @@
       applyText();
     }
     async function loadImprint() {
-      const res = await fetch('/api/imprint');
+      const lang = document.documentElement.lang || 'de';
+      const res = await fetch(`/api/imprint?lang=${lang}`);
       const data = await res.json();
       const address = document.getElementById('imprint-address');
       const contactList = document.getElementById('contact-list');

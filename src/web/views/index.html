@@ -431,7 +431,8 @@
       try {
         const modalContent = document.getElementById('modal-content');
         if (url === '/imprint') {
-          const res = await fetch('/api/imprint');
+          const lang = document.documentElement.lang || 'de';
+          const res = await fetch(`/api/imprint?lang=${lang}`);
           const data = await res.json();
           modalContent.innerHTML = buildImprintHtml(data);
         } else {
