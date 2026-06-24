@@ -6,7 +6,7 @@ const logger = require('../../logger');
 const eventHandlers = require('../handlers/events');
 const config = require('../../config');
 
-const LOGO_URL = `${config.app.url}/static/logonotrans.png`;
+const LOGO_URL = `${config.app.url}/static/PalCord_logo_echt_transparent.png`;
 
 const guildState = new Map();
 

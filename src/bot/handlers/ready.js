@@ -9,7 +9,7 @@ const { startBasesEmbedUpdate } = require('../embeds/baseEmbed');
 module.exports = async function readyHandler(client) {
   logger.info(`Bot logged in as ${client.user.tag}`);
 
-  const logoPath = path.join(__dirname, '..', '..', '..', 'logonotrans.png');
+  const logoPath = path.join(__dirname, '..', '..', '..', 'PalCord_logo_echt_transparent.png');
   if (fs.existsSync(logoPath)) {
     try {
       await client.user.setAvatar(logoPath);
