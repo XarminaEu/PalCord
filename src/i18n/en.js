@@ -274,4 +274,7 @@ module.exports = {
   import_failed: 'Import failed.',
   import: 'Import',
   reseed: 'Reload',
+  rules: 'Rules',
+  server_rules: 'Server Rules',
+  no_rules: 'No rules have been set yet.',
 };

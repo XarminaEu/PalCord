@@ -331,8 +331,9 @@
     }
 
     function renderTabs() {
+      const userTabs = ['status', 'players', 'bases', 'shop', 'rules'];
       if (!currentGuildData.isAdmin) {
-        if (!['status', 'bases'].includes(activeTab)) activeTab = 'status';
+        if (!userTabs.includes(activeTab)) activeTab = 'status';
       }
       if (!isGlobalAdmin && activeTab === 'data') activeTab = 'server';
     }
@@ -356,20 +357,39 @@
       ` : `
         <div class="tabs">
           <div class="tab ${activeTab === 'status' ? 'active' : ''}" onclick="activeTab='status';renderContent();">${T('status')}</div>
+          <div class="tab ${activeTab === 'players' ? 'active' : ''}" onclick="activeTab='players';renderContent();">${T('players')}</div>
           <div class="tab ${activeTab === 'bases' ? 'active' : ''}" onclick="activeTab='bases';renderContent();">${T('bases')}</div>
+          <div class="tab ${activeTab === 'shop' ? 'active' : ''}" onclick="activeTab='shop';renderContent();">${T('shop')}</div>
+          <div class="tab ${activeTab === 'rules' ? 'active' : ''}" onclick="activeTab='rules';renderContent();">${T('rules')}</div>
         </div>
       `;
 
-      if (!isAdmin && activeTab === 'status') {
-        c.innerHTML = tabs + statusView();
-        loadStatus();
-        return;
-      }
-
-      if (!isAdmin && activeTab === 'bases') {
-        c.innerHTML = tabs + basesView();
-        loadBases();
-        return;
+      if (!isAdmin) {
+        if (activeTab === 'status') {
+          c.innerHTML = tabs + statusView();
+          loadStatus();
+          return;
+        }
+        if (activeTab === 'players') {
+          c.innerHTML = tabs + playersView();
+          loadPlayers();
+          return;
+        }
+        if (activeTab === 'bases') {
+          c.innerHTML = tabs + basesView();
+          loadBases();
+          return;
+        }
+        if (activeTab === 'shop') {
+          c.innerHTML = tabs + shopView();
+          loadShop();
+          return;
+        }
+        if (activeTab === 'rules') {
+          c.innerHTML = tabs + rulesView();
+          loadRules();
+          return;
+        }
       }
       let view = '';
       if (activeTab === 'server') view = serversView();
@@ -667,7 +687,8 @@
     }
 
     function shopView() {
-      return `
+      const isAdmin = currentGuildData.isAdmin;
+      const adminForm = isAdmin ? `
         <div class="section">
           <h3>${T('add_shop_item')}</h3>
           <form id="shop-form">
@@ -695,14 +716,18 @@
             <button type="submit" class="btn">${T('add')}</button>
           </form>
         </div>
+      ` : '';
+      return `
+        ${adminForm}
         <div class="section">
           <h3>${T('shop_items')}</h3>
-          <table id="shop-table"><thead><tr><th>${T('player_name')}</th><th>${T('item_type')}</th><th>${T('price')}</th><th>${T('amount_level')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+          <table id="shop-table"><thead><tr><th>${T('player_name')}</th><th>${T('item_type')}</th><th>${T('price')}</th><th>${T('amount_level')}</th>${isAdmin ? `<th>${T('action')}</th>` : ''}</tr></thead><tbody></tbody></table>
         </div>
       `;
     }
 
     async function loadShop() {
+      const isAdmin = currentGuildData.isAdmin;
       const res = await fetch(`/api/guilds/${currentGuild}/shop`);
       const items = await res.json();
       const tbody = document.querySelector('#shop-table tbody');
@@ -713,10 +738,12 @@
           <td>${i.item_type}</td>
           <td>${i.price}</td>
           <td>${i.level || i.amount}</td>
-          <td><button class="btn btn-danger" onclick="deleteShopItem(${i.id})">${T('delete')}</button></td>
+          ${isAdmin ? `<td><button class="btn btn-danger" onclick="deleteShopItem(${i.id})">${T('delete')}</button></td>` : ''}
         </tr>
       `).join('');
-      if (items.length === 0) tbody.innerHTML = `<tr><td colspan="5">${T('no_shop_items')}</td></tr>`;
+      const cols = isAdmin ? 5 : 4;
+      if (items.length === 0) tbody.innerHTML = `<tr><td colspan="${cols}">${T('no_shop_items')}</td></tr>`;
+      if (!isAdmin) return;
 
       const [itemsRes, palsRes] = await Promise.all([fetch('/api/items'), fetch('/api/pals')]);
       const allItems = await itemsRes.json();
@@ -817,7 +844,8 @@
     }
 
     function basesView() {
-      return `
+      const isAdmin = currentGuildData.isAdmin;
+      const adminForms = isAdmin ? `
         <div class="section">
           <h3>${T('add_base')}</h3>
           <form id="base-form">
@@ -858,10 +886,13 @@
             <button type="submit" class="btn">${T('save')}</button>
           </form>
         </div>
+      ` : '';
+      return `
+        ${adminForms}
         <div class="section">
           <h3>${T('bases')}</h3>
           <p id="bases-limit-info" style="color:#a0a0a0;margin-bottom:0.5rem;"></p>
-          <table id="bases-table"><thead><tr><th>${T('player_name')}</th><th>${T('base_name')}</th><th>X</th><th>Y</th><th>Z</th><th>${T('description')}</th><th>${T('main_base')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+          <table id="bases-table"><thead><tr><th>${T('player_name')}</th><th>${T('base_name')}</th><th>X</th><th>Y</th><th>Z</th><th>${T('description')}</th><th>${T('main_base')}</th>${isAdmin ? `<th>${T('action')}</th>` : ''}</tr></thead><tbody></tbody></table>
         </div>
       `;
     }
@@ -1162,6 +1193,7 @@
 
       const tbody = document.querySelector('#bases-table tbody');
       if (tbody) {
+        const cols = isAdmin ? 8 : 7;
         tbody.innerHTML = bases.map(b => `
           <tr>
             <td>${escapeHtml(b.ingame_name || b.user_id)}</td>
@@ -1171,10 +1203,10 @@
             <td>${b.z !== null ? b.z : '-'}</td>
             <td>${escapeHtml(b.description || '')}</td>
             <td>${b.is_main ? '✅' : ''}</td>
-            <td><button class="btn btn-danger" onclick="deleteBase(${b.id})">${T('delete')}</button></td>
+            ${isAdmin ? `<td><button class="btn btn-danger" onclick="deleteBase(${b.id})">${T('delete')}</button></td>` : ''}
           </tr>
         `).join('');
-        if (bases.length === 0) tbody.innerHTML = `<tr><td colspan="8">${T('no_bases')}</td></tr>`;
+        if (bases.length === 0) tbody.innerHTML = `<tr><td colspan="${cols}">${T('no_bases')}</td></tr>`;
       }
 
       const form = document.getElementById('base-form');
@@ -1265,6 +1297,23 @@
         body: JSON.stringify({ role }),
       });
       renderContent();
+    }
+
+    function rulesView() {
+      return `
+        <div class="section">
+          <h3>${T('server_rules')}</h3>
+          <div id="rules-content" style="white-space:pre-wrap;background:#1a1a2e;padding:1rem;border-radius:0.5rem;min-height:3rem;color:#e0e0e0;"></div>
+        </div>
+      `;
+    }
+
+    async function loadRules() {
+      const res = await fetch(`/api/guilds/${currentGuild}/rules`);
+      const data = await res.json();
+      const el = document.getElementById('rules-content');
+      if (!el) return;
+      el.textContent = data.rules || T('no_rules');
     }
 
     function settingsView() {

@@ -261,6 +261,13 @@ router.get('/api/guilds/:guildId/settings', ensureAuthenticated, (req, res) => {
   res.json(settings);
 });
 
+router.get('/api/guilds/:guildId/rules', ensureAuthenticated, (req, res) => {
+  const { guildId } = req.params;
+  if (!canAccessGuild(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
+  const rules = guildService.getServerConfig(guildId, 'rules') || '';
+  res.json({ rules });
+});
+
 router.post('/api/guilds/:guildId/settings', ensureAuthenticated, (req, res) => {
   const { guildId } = req.params;
   if (!isGuildAdmin(req, guildId)) return res.status(403).json({ error: 'Forbidden' });
