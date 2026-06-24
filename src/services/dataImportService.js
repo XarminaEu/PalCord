@@ -1,5 +1,6 @@
 const db = require('../database/db');
 const logger = require('../logger');
+const hardcodedData = require('../data/gameData');
 
 const itemCategories = {
   Sphere: 'sphere', Sphere_Mega: 'sphere', Sphere_Giga: 'sphere', Sphere_Tera: 'sphere',
@@ -46,36 +47,64 @@ function importTechnologies(technologies) {
   return technologies.length;
 }
 
+function importHardcodedData() {
+  const result = { items: 0, pals: 0, technologies: 0 };
+  try {
+    result.items = importItems(hardcodedData.items);
+  } catch (err) {
+    logger.error(`Failed to import hardcoded items: ${err.message}`);
+  }
+  try {
+    result.pals = importPals(hardcodedData.pals);
+  } catch (err) {
+    logger.error(`Failed to import hardcoded pals: ${err.message}`);
+  }
+  try {
+    result.technologies = importTechnologies(hardcodedData.technology);
+  } catch (err) {
+    logger.error(`Failed to import hardcoded technologies: ${err.message}`);
+  }
+  return result;
+}
+
 function importFromFiles() {
   const path = require('path');
   const fs = require('fs');
   const dataDir = path.join(__dirname, '..', '..', 'Data');
   const result = { items: 0, pals: 0, technologies: 0 };
-  try {
-    if (fs.existsSync(path.join(dataDir, 'itemdata.json'))) {
-      const itemData = require(path.join(dataDir, 'itemdata.json'));
-      result.items = importItems(itemData.items);
+  const hasItemFile = fs.existsSync(path.join(dataDir, 'itemdata.json'));
+  const hasPalFile = fs.existsSync(path.join(dataDir, 'paldata.json'));
+  const hasTechFile = fs.existsSync(path.join(dataDir, 'techdata.json'));
+
+  if (hasItemFile || hasPalFile || hasTechFile) {
+    try {
+      if (hasItemFile) {
+        const itemData = require(path.join(dataDir, 'itemdata.json'));
+        result.items = importItems(itemData.items);
+      }
+    } catch (err) {
+      logger.error(`Failed to import items from file: ${err.message}`);
     }
-  } catch (err) {
-    logger.error(`Failed to import items from file: ${err.message}`);
-  }
-  try {
-    if (fs.existsSync(path.join(dataDir, 'paldata.json'))) {
-      const palData = require(path.join(dataDir, 'paldata.json'));
-      result.pals = importPals(palData.pals);
+    try {
+      if (hasPalFile) {
+        const palData = require(path.join(dataDir, 'paldata.json'));
+        result.pals = importPals(palData.pals);
+      }
+    } catch (err) {
+      logger.error(`Failed to import pals from file: ${err.message}`);
     }
-  } catch (err) {
-    logger.error(`Failed to import pals from file: ${err.message}`);
-  }
-  try {
-    if (fs.existsSync(path.join(dataDir, 'techdata.json'))) {
-      const techData = require(path.join(dataDir, 'techdata.json'));
-      result.technologies = importTechnologies(techData.technology);
+    try {
+      if (hasTechFile) {
+        const techData = require(path.join(dataDir, 'techdata.json'));
+        result.technologies = importTechnologies(techData.technology);
+      }
+    } catch (err) {
+      logger.error(`Failed to import technologies from file: ${err.message}`);
     }
-  } catch (err) {
-    logger.error(`Failed to import technologies from file: ${err.message}`);
+    return { source: 'files', result };
   }
-  return result;
+
+  return { source: 'hardcoded', result: importHardcodedData() };
 }
 
 function getCounts() {
@@ -89,6 +118,7 @@ module.exports = {
   importItems,
   importPals,
   importTechnologies,
+  importHardcodedData,
   importFromFiles,
   getCounts,
 };

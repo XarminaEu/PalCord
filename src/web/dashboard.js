@@ -232,10 +232,21 @@ router.post('/api/data/import', ensureAuthenticated, (req, res) => {
 router.post('/api/data/reseed', ensureAuthenticated, (req, res) => {
   if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
   try {
-    const result = dataImportService.importFromFiles();
-    res.json({ ok: true, result, counts: dataImportService.getCounts() });
+    const { source, result } = dataImportService.importFromFiles();
+    res.json({ ok: true, source, result, counts: dataImportService.getCounts() });
   } catch (err) {
     logger.error(`Reseed error: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/api/data/hardcoded', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const result = dataImportService.importHardcodedData();
+    res.json({ ok: true, source: 'hardcoded', result, counts: dataImportService.getCounts() });
+  } catch (err) {
+    logger.error(`Hardcoded import error: ${err.message}`);
     res.status(500).json({ error: err.message });
   }
 });

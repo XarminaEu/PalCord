@@ -1362,6 +1362,11 @@
           <p style="color:var(--muted);">Data/itemdata.json, Data/paldata.json, Data/techdata.json</p>
           <button class="btn" onclick="submitReseed()">${T('reseed')}</button>
         </div>
+        <div class="section">
+          <h3>Hardcoded Daten</h3>
+          <p style="color:var(--muted);">Importiere die fest eingebauten Spieledaten ohne externe Dateien.</p>
+          <button class="btn" onclick="submitHardcoded()">Hardcoded importieren</button>
+        </div>
       `;
     }
 
@@ -1399,6 +1404,17 @@
     async function submitReseed() {
       if (!confirm('Reload from files?')) return;
       const res = await fetch('/api/data/reseed', { method: 'POST' });
+      if (res.ok) {
+        alert(T('import_success'));
+        loadDataImport();
+      } else {
+        alert(T('import_failed'));
+      }
+    }
+
+    async function submitHardcoded() {
+      if (!confirm('Hardcoded Daten importieren?')) return;
+      const res = await fetch('/api/data/hardcoded', { method: 'POST' });
       if (res.ok) {
         alert(T('import_success'));
         loadDataImport();
