@@ -73,7 +73,7 @@ async function handlePalPlayers(interaction) {
 async function handlePalShop(interaction) {
   const { guildId } = getGuildContext(interaction);
   if (!guildId) {
-    await interaction.reply({ content: '❌ Dieser Befehl funktioniert nur auf einem Discord-Server.', ephemeral: true });
+    await interaction.reply({ content: '❌ ' + __('cmd_guild_only'), ephemeral: true });
     return;
   }
   const userId = interaction.user.id;
@@ -86,7 +86,7 @@ async function handlePalShop(interaction) {
 async function handlePalBalance(interaction) {
   const { guildId } = getGuildContext(interaction);
   if (!guildId) {
-    await interaction.reply({ content: '❌ Dieser Befehl funktioniert nur auf einem Discord-Server.', ephemeral: true });
+    await interaction.reply({ content: '❌ ' + __('cmd_guild_only'), ephemeral: true });
     return;
   }
   const userId = interaction.user.id;
@@ -103,7 +103,7 @@ async function handlePalGive(interaction) {
   const ctx = await requireServer(interaction);
   if (!ctx) return;
   if (!isAdmin(interaction)) {
-    await interaction.reply({ content: '❌ Nur Admins können Items vergeben.', ephemeral: true });
+    await interaction.reply({ content: __('error_give_admin_only'), ephemeral: true });
     return;
   }
   const typeSelect = new StringSelectMenuBuilder()
@@ -120,14 +120,14 @@ async function handlePalGive(interaction) {
       new StringSelectMenuOptionBuilder().setLabel('⭐ EXP').setValue('exp')
     );
   const row = new ActionRowBuilder().addComponents(typeSelect);
-  await interaction.reply({ content: 'Wähle den Typ des Geschenks:', components: [row], ephemeral: true });
+  await interaction.reply({ content: __('give_choose_type'), components: [row], ephemeral: true });
 }
 
 async function handlePalAdmin(interaction) {
   const ctx = await requireServer(interaction);
   if (!ctx) return;
   if (!isAdmin(interaction)) {
-    await interaction.reply({ content: '❌ Nur Admins.', ephemeral: true });
+    await interaction.reply({ content: __('error_admin_only'), ephemeral: true });
     return;
   }
   const actionSelect = new StringSelectMenuBuilder()
@@ -147,14 +147,14 @@ async function handlePalAdmin(interaction) {
       new StringSelectMenuOptionBuilder().setLabel('📋 Whitelist anzeigen').setValue('whitelist_get')
     );
   const row = new ActionRowBuilder().addComponents(actionSelect);
-  await interaction.reply({ content: 'Wähle eine Admin-Aktion:', components: [row], ephemeral: true });
+  await interaction.reply({ content: __('admin_choose_action'), components: [row], ephemeral: true });
 }
 
 async function handlePalWhitelist(interaction) {
   const ctx = await requireServer(interaction);
   if (!ctx) return;
   if (!isAdmin(interaction)) {
-    await interaction.reply({ content: '❌ Nur Admins.', ephemeral: true });
+    await interaction.reply({ content: __('error_admin_only'), ephemeral: true });
     return;
   }
   const actionSelect = new StringSelectMenuBuilder()
@@ -168,27 +168,27 @@ async function handlePalWhitelist(interaction) {
       new StringSelectMenuOptionBuilder().setLabel('📋 Anzeigen').setValue('get')
     );
   const row = new ActionRowBuilder().addComponents(actionSelect);
-  await interaction.reply({ content: 'Wähle eine Whitelist-Aktion:', components: [row], ephemeral: true });
+  await interaction.reply({ content: __('whitelist_choose_action'), components: [row], ephemeral: true });
 }
 
 async function handlePalSetup(interaction) {
   const { guildId } = getGuildContext(interaction);
   if (!guildId) {
-    await interaction.reply({ content: '❌ Dieser Befehl funktioniert nur auf einem Discord-Server.', ephemeral: true });
+    await interaction.reply({ content: '❌ ' + __('cmd_guild_only'), ephemeral: true });
     return;
   }
   if (!isAdmin(interaction)) {
-    await interaction.reply({ content: '❌ Nur Admins können das Embed einrichten.', ephemeral: true });
+    await interaction.reply({ content: __('error_admin_only'), ephemeral: true });
     return;
   }
   const channel = interaction.options.getChannel('channel');
   if (!channel || !channel.isTextBased()) {
-    await interaction.reply({ content: 'Bitte wähle einen gültigen Text-Channel.', ephemeral: true });
+    await interaction.reply({ content: __('error_choose_text_channel'), ephemeral: true });
     return;
   }
   const server = guildService.getActiveServer(guildId);
   if (!server) {
-    await interaction.reply({ content: '❌ Kein aktiver Server vorhanden. Bitte erst im Dashboard einen Server anlegen.', ephemeral: true });
+    await interaction.reply({ content: __('error_no_active_server_dashboard'), ephemeral: true });
     return;
   }
   guildService.updateGuildServer(server.id, { embed_channel_id: channel.id });
@@ -244,7 +244,7 @@ async function handlePalBase(interaction) {
   if (action === 'add') {
     const userId = player ? player.user_id : null;
     if (!userId) {
-      await interaction.reply({ content: '❌ Verknüpfe zuerst deinen Account mit `/pal link <userId>`.', ephemeral: true });
+      await interaction.reply({ content: __('error_link_account_first'), ephemeral: true });
       return;
     }
     const name = interaction.options.getString('name');
@@ -252,7 +252,7 @@ async function handlePalBase(interaction) {
     const y = interaction.options.getNumber('y');
     const z = interaction.options.getNumber('z');
     if (!name || x === null || y === null) {
-      await interaction.reply({ content: '❌ Name, X und Y sind Pflicht.', ephemeral: true });
+      await interaction.reply({ content: __('error_name_x_y_required'), ephemeral: true });
       return;
     }
     try {
@@ -269,7 +269,7 @@ async function handlePalBase(interaction) {
       bases = baseService.getPlayerBases(guildId, player.user_id);
     }
     if (bases.length === 0) {
-      await interaction.reply({ content: 'Keine Basen eingetragen.', ephemeral: true });
+      await interaction.reply({ content: __('error_no_bases'), ephemeral: true });
       return;
     }
     const embed = new EmbedBuilder()
@@ -284,15 +284,15 @@ async function handlePalBase(interaction) {
   } else if (action === 'setmain') {
     const id = interaction.options.getInteger('id');
     if (!id || !player) {
-      await interaction.reply({ content: '❌ Verknüpfe zuerst deinen Account und gib eine Basis-ID an.', ephemeral: true });
+      await interaction.reply({ content: __('error_link_account_first'), ephemeral: true });
       return;
     }
     const ok = baseService.setMainBase(id, guildId, player.user_id);
     if (!ok) {
-      await interaction.reply({ content: '❌ Basis nicht gefunden.', ephemeral: true });
+      await interaction.reply({ content: __('error_base_not_found'), ephemeral: true });
       return;
     }
-    await interaction.reply({ content: '✅ Hauptbasis gesetzt.', ephemeral: true });
+    await interaction.reply({ content: __('main_base_set'), ephemeral: true });
   }
 }
 
@@ -304,7 +304,7 @@ async function handlePalProfile(interaction) {
   }
   const player = db.prepare('SELECT * FROM players WHERE guild_id = ? AND discord_id = ?').get(guildId, interaction.user.id);
   if (!player) {
-    await interaction.reply({ content: '❌ Verknüpfe zuerst deinen Account mit `/pal link <userId>`.', ephemeral: true });
+    await interaction.reply({ content: __('error_link_account_first'), ephemeral: true });
     return;
   }
   const baseService = require('../../services/baseService');
@@ -350,18 +350,18 @@ async function handlePalDaily(interaction) {
   }
   const player = db.prepare('SELECT * FROM players WHERE guild_id = ? AND discord_id = ?').get(guildId, interaction.user.id);
   if (!player) {
-    await interaction.reply({ content: '❌ Verknüpfe zuerst deinen Account mit `/pal link <userId>`.', ephemeral: true });
+    await interaction.reply({ content: __('error_link_account_first'), ephemeral: true });
     return;
   }
   const today = new Date().toISOString().split('T')[0];
   const lastDaily = guildService.getServerConfig(guildId, `daily_${player.user_id}`);
   if (lastDaily === today) {
-    await interaction.reply({ content: '❌ Du hast deine tägliche Belohnung heute schon abgeholt.', ephemeral: true });
+    await interaction.reply({ content: __('error_daily_already_claimed'), ephemeral: true });
     return;
   }
   guildService.setServerConfig(guildId, `daily_${player.user_id}`, today);
   playerService.addCoins(guildId, player.user_id, 100);
-  await interaction.reply({ content: '✅ Du hast **100 Coins** tägliche Belohnung erhalten!', ephemeral: true });
+  await interaction.reply({ content: __('daily_reward_received', { amount: 100 }), ephemeral: true });
 }
 
 async function handlePalPay(interaction) {
@@ -372,27 +372,27 @@ async function handlePalPay(interaction) {
   }
   const fromPlayer = db.prepare('SELECT * FROM players WHERE guild_id = ? AND discord_id = ?').get(guildId, interaction.user.id);
   if (!fromPlayer) {
-    await interaction.reply({ content: '❌ Verknüpfe zuerst deinen Account mit `/pal link <userId>`.', ephemeral: true });
+    await interaction.reply({ content: __('error_link_account_first'), ephemeral: true });
     return;
   }
   const targetUser = interaction.options.getUser('user');
   const amount = interaction.options.getInteger('amount');
   if (!targetUser || amount <= 0) {
-    await interaction.reply({ content: '❌ Ungültige Eingabe.', ephemeral: true });
+    await interaction.reply({ content: __('error_invalid_input'), ephemeral: true });
     return;
   }
   const toPlayer = db.prepare('SELECT * FROM players WHERE guild_id = ? AND discord_id = ?').get(guildId, targetUser.id);
   if (!toPlayer) {
-    await interaction.reply({ content: '❌ Zielspieler ist nicht verknüpft.', ephemeral: true });
+    await interaction.reply({ content: __('error_target_not_linked'), ephemeral: true });
     return;
   }
   if (fromPlayer.coins < amount) {
-    await interaction.reply({ content: '❌ Nicht genug Coins.', ephemeral: true });
+    await interaction.reply({ content: __('error_not_enough_coins'), ephemeral: true });
     return;
   }
   playerService.addCoins(guildId, fromPlayer.user_id, -amount);
   playerService.addCoins(guildId, toPlayer.user_id, amount);
-  await interaction.reply({ content: `✅ Du hast **${amount} Coins** an <@${targetUser.id}> gesendet.`, ephemeral: true });
+  await interaction.reply({ content: __('pay_sent', { amount, user: targetUser.id }), ephemeral: true });
 }
 
 async function handlePalBasesetup(interaction) {
@@ -520,9 +520,9 @@ async function handlePalGiveaway(interaction) {
   if (action === 'list') {
     const giveaways = giveawayService.getActiveGiveaways(guildId);
     const embed = new EmbedBuilder()
-      .setTitle('🎉 Aktive Giveaways')
+      .setTitle('🎉 ' + __('giveaways'))
       .setColor(0xe67e22)
-      .setDescription(giveaways.length ? giveaways.map(g => `**${g.prize}** – endet ${g.end_time}`).join('\n') : 'Keine aktiven Giveaways.');
+      .setDescription(giveaways.length ? giveaways.map(g => `**${g.prize}** – ${__('giveaway_end')} ${g.end_time}`).join('\n') : __('giveaway_no_active'));
     await interaction.reply({ embeds: [embed], ephemeral: true });
     return;
   }
@@ -539,11 +539,11 @@ async function handlePalGiveaway(interaction) {
     const winners = interaction.options.getInteger('winners') || 1;
     const minutes = interaction.options.getInteger('minutes') || 60;
     if (!prize) {
-      await interaction.reply({ content: '❌ Gib einen Preis an.', ephemeral: true });
+      await interaction.reply({ content: __('giveaway_prize_required'), ephemeral: true });
       return;
     }
     if (prizeType !== 'coins' && !prizeId) {
-      await interaction.reply({ content: '❌ Gib eine Item/Pal ID an (außer bei Coins).', ephemeral: true });
+      await interaction.reply({ content: __('giveaway_id_required'), ephemeral: true });
       return;
     }
     const endTime = new Date(Date.now() + minutes * 60000).toISOString();
@@ -561,15 +561,15 @@ async function handlePalGiveaway(interaction) {
     });
 
     const embed = new EmbedBuilder()
-      .setTitle('🎉 Giveaway')
-      .setDescription(`**Preis:** ${prize}\n**Typ:** ${prizeType}\n**Gewinner:** ${winners}\n**Endet:** ${endTime.replace('T', ' ').substring(0, 16)}`)
+      .setTitle('🎉 ' + __('giveaways'))
+      .setDescription(`**${__('giveaway_prize')}:** ${prize}\n**Typ:** ${prizeType}\n**${__('giveaway_winners')}:** ${winners}\n**${__('giveaway_end')}:** ${endTime.replace('T', ' ').substring(0, 16)}`)
       .setColor(0xe67e22)
       .setFooter({ text: `ID: ${giveawayId}` });
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`giveaway_join_${giveawayId}`)
-        .setLabel('Teilnehmen')
+        .setLabel(__('giveaway_join'))
         .setStyle(ButtonStyle.Primary)
     );
 
@@ -581,35 +581,35 @@ async function handlePalGiveaway(interaction) {
 async function handleGiveawayJoin(interaction, giveawayId) {
   const added = giveawayService.addParticipant(giveawayId, interaction.user.id);
   if (!added) {
-    await interaction.reply({ content: 'Du nimmst bereits an diesem Giveaway teil.', ephemeral: true });
+    await interaction.reply({ content: __('giveaway_join_already'), ephemeral: true });
     return;
   }
-  await interaction.reply({ content: '✅ Du nimmst jetzt am Giveaway teil!', ephemeral: true });
+  await interaction.reply({ content: __('giveaway_joined'), ephemeral: true });
 }
 
 async function handleGiveawayDistribute(interaction, ticketId) {
   const ticket = giveawayService.getTicketById(ticketId);
   if (!ticket) {
-    await interaction.reply({ content: '❌ Ticket nicht gefunden.', ephemeral: true });
+    await interaction.reply({ content: __('giveaway_ticket_not_found'), ephemeral: true });
     return;
   }
   if (!isAdmin(interaction)) {
-    await interaction.reply({ content: '❌ Nur Admins/Supporter können das verteilen.', ephemeral: true });
+    await interaction.reply({ content: __('giveaway_only_admin_distribute'), ephemeral: true });
     return;
   }
   const giveaway = giveawayService.getGiveawayById(ticket.giveaway_id);
   if (!giveaway) {
-    await interaction.reply({ content: '❌ Giveaway nicht gefunden.', ephemeral: true });
+    await interaction.reply({ content: __('giveaway_not_found'), ephemeral: true });
     return;
   }
   const server = guildService.getActiveServer(giveaway.guild_id);
   if (!server) {
-    await interaction.reply({ content: '❌ Kein aktiver Server für diesen Giveaway.', ephemeral: true });
+    await interaction.reply({ content: __('giveaway_no_active_server'), ephemeral: true });
     return;
   }
   const player = db.prepare('SELECT * FROM players WHERE guild_id = ? AND discord_id = ?').get(giveaway.guild_id, ticket.winner_id);
   if (!player) {
-    await interaction.reply({ content: `❌ <@${ticket.winner_id}> hat keinen Account verknüpft. Bitte zuerst mit "/pal link <UserId>" verknüpfen.`, ephemeral: true });
+    await interaction.reply({ content: __('giveaway_winner_not_linked', { user: ticket.winner_id }), ephemeral: true });
     return;
   }
 
@@ -650,16 +650,16 @@ async function handleGiveawayDistribute(interaction, ticketId) {
   }
 
   if (!result.success) {
-    await interaction.reply({ content: `❌ Verteilen fehlgeschlagen: ${result.error || 'Unbekannter Fehler'}`, ephemeral: true });
+    await interaction.reply({ content: __('giveaway_distribute_failed', { error: result.error || 'Unknown' }), ephemeral: true });
     return;
   }
 
   giveawayService.setTicketStatus(ticketId, 'distributed');
-  await interaction.reply({ content: `✅ ${description} an <@${ticket.winner_id}> (${player.user_id}) ausgegeben.`, ephemeral: true });
+  await interaction.reply({ content: __('giveaway_distributed', { description, user: ticket.winner_id, userId: player.user_id }), ephemeral: true });
   try {
     const channel = interaction.channel;
     if (channel) {
-      await channel.send(`✅ Giveaway-Preis **${description}** wurde von <@${interaction.user.id}> an <@${ticket.winner_id}> ausgegeben. Herzlichen Glückwunsch!`);
+      await channel.send(__('giveaway_distributed_channel', { description, admin: interaction.user.id, user: ticket.winner_id }));
       await channel.edit({ permissionOverwrites: [
         { id: channel.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
         { id: ticket.winner_id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] },

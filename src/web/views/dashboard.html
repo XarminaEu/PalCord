@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PalCord Dashboard - Palworld Server verwalten</title>
-  <meta name="description" content="PalCord Dashboard zur Verwaltung von Palworld Servern, Shop, Spielern, Basen und Broadcasts.">
+  <title id="page-title">PalCord Dashboard</title>
+  <meta name="description" content="PalCord Dashboard for managing Palworld servers, shop, players, bases and broadcasts.">
   <meta name="robots" content="noindex, nofollow">
   <style>
     :root {
@@ -242,13 +242,13 @@
   </header>
   <div class="main">
     <aside class="sidebar">
-      <h2 id="sidebar-title">Deine Discord Server</h2>
+      <h2 id="sidebar-title">Your Discord Servers</h2>
       <ul class="guild-list" id="guild-list"></ul>
     </aside>
     <main class="content" id="content">
       <div class="section">
-        <h3 id="welcome-title">Willkommen</h3>
-        <p id="welcome-text">Wähle einen Discord-Server aus der linken Seite, um Palworld-Server, Shop und Einstellungen zu verwalten.</p>
+        <h3 id="welcome-title">Welcome</h3>
+        <p id="welcome-text">Select a Discord server from the left to manage Palworld servers, shop and settings.</p>
       </div>
     </main>
   </div>
@@ -266,6 +266,26 @@
     let currentGuildData = null;
     let isGlobalAdmin = false;
     let activeTab = 'server';
+
+    window.applyStaticTranslations = function() {
+      document.getElementById('page-title').textContent = T('dashboard_title') || 'PalCord Dashboard';
+      document.getElementById('sidebar-title').textContent = T('your_discord_servers') || 'Your Discord Servers';
+      document.getElementById('welcome-title').textContent = T('welcome') || 'Welcome';
+      document.getElementById('welcome-text').textContent = T('select_server_hint') || 'Select a Discord server from the left to manage Palworld servers, shop and settings.';
+      document.getElementById('logout-link').textContent = T('logout') || 'Logout';
+      document.getElementById('footer-imprint').textContent = T('imprint_title') || 'Impressum';
+      document.getElementById('footer-terms').textContent = T('terms_title') || 'Nutzungsbedingungen';
+      document.getElementById('footer-privacy').textContent = T('privacy_title') || 'Datenschutz';
+      const welcome = document.getElementById('content');
+      if (welcome && !currentGuild) {
+        welcome.innerHTML = `
+          <div class="section">
+            <h3>${T('welcome') || 'Welcome'}</h3>
+            <p>${T('select_server_hint') || 'Select a Discord server from the left to manage Palworld servers, shop and settings.'}</p>
+          </div>
+        `;
+      }
+    };
 
     async function loadMe() {
       const res = await fetch('/api/me');

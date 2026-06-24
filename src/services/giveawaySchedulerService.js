@@ -1,10 +1,13 @@
 const giveawayService = require('./giveawayService');
 const guildService = require('./guildService');
+const { t } = require('../i18n');
 const logger = require('../logger');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits } = require('discord.js');
 
 async function endGiveaway(client, giveaway) {
   try {
+    const lang = guildService.getGuildLanguage(giveaway.guild_id);
+    const _ = (key, replacements = {}) => t(key, lang, replacements);
     giveawayService.setStatus(giveaway.id, 'ended');
     const winners = giveawayService.drawWinners(giveaway.id);
     const guild = await client.guilds.fetch(giveaway.guild_id).catch(() => null);
@@ -13,8 +16,8 @@ async function endGiveaway(client, giveaway) {
 
     if (winners.length === 0) {
       const embed = new EmbedBuilder()
-        .setTitle('🎉 Giveaway beendet')
-        .setDescription(`**${giveaway.prize}**\n\nLeider hat sich niemand angemeldet.`)
+        .setTitle('🎉 ' + _('giveaway_ended'))
+        .setDescription(`**${giveaway.prize}**\n\n${_('giveaway_no_participants')}`)
         .setColor(0x95a5a6)
         .setTimestamp();
       if (message) await message.edit({ embeds: [embed], components: [] });
@@ -24,8 +27,8 @@ async function endGiveaway(client, giveaway) {
 
     const winnerMentions = winners.map(id => `<@${id}>`).join(', ');
     const embed = new EmbedBuilder()
-      .setTitle('🎉 Giveaway beendet')
-      .setDescription(`**${giveaway.prize}**\n\nGewinner: ${winnerMentions}\n\nEine private Nachricht wurde versendet und ein Ticket-Channel erstellt.`)
+      .setTitle('🎉 ' + _('giveaway_ended'))
+      .setDescription(`**${giveaway.prize}**\n\n${_('giveaway_winners')}: ${winnerMentions}\n\n${_('giveaway_dm_and_ticket')}`)
       .setColor(0x2ecc71)
       .setTimestamp();
 
@@ -35,7 +38,7 @@ async function endGiveaway(client, giveaway) {
     for (const winnerId of winners) {
       try {
         const user = await client.users.fetch(winnerId);
-        await user.send(`🎉 Glückwunsch! Du hast **${giveaway.prize}** bei einem Giveaway auf **${guild?.name || 'einem Server'}** gewonnen. Ein Support-Channel wurde für dich erstellt, um die Ausgabe zu koordinieren.`);
+        await user.send(_('giveaway_winner_dm', { prize: giveaway.prize, server: guild?.name || _('a_server') }));
       } catch (e) {
         logger.warn(`Could not DM giveaway winner ${winnerId}: ${e.message}`);
       }
@@ -67,17 +70,17 @@ async function endGiveaway(client, giveaway) {
           const distributeRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
               .setCustomId(`giveaway_distribute_${ticketId}`)
-              .setLabel('Giveaway verteilen')
+              .setLabel(_('giveaway_distribute_button'))
               .setStyle(ButtonStyle.Success)
           );
 
           const ticketEmbed = new EmbedBuilder()
-            .setTitle('🎉 Giveaway Gewinner')
-            .setDescription(`<@${winnerId}> hat **${giveaway.prize}** gewonnen.\n\nSobald der Preis im Spiel ausgegeben wurde, kann das Admin-Team diesen Button drücken.`)
+            .setTitle('🎉 ' + _('giveaway_winner'))
+            .setDescription(`<@${winnerId}> ${_('giveaway_won_prize', { prize: giveaway.prize })}\n\n${_('giveaway_distribute_hint')}`)
             .setColor(0xe67e22);
 
           await ticketChannel.send({ content: `<@${winnerId}>`, embeds: [ticketEmbed], components: [distributeRow] });
-          await ticketChannel.send(`<@${winnerId}> bitte warte hier auf ein Teammitglied. ${supportRoleId ? `<@&${supportRoleId}> ` : ''}${adminRoleId ? `<@&${adminRoleId}>` : ''}`);
+          await ticketChannel.send(_('giveaway_wait_support', { user: winnerId, supportRole: supportRoleId || '', adminRole: adminRoleId || '' }));
         }
       } catch (e) {
         logger.error(`Could not create giveaway ticket channel for winner ${winnerId}: ${e.message}`);

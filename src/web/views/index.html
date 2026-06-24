@@ -295,7 +295,7 @@
   <div class="container">
     <div class="hero">
       <img src="/static/PalCord_logo_echt_transparent.png" class="logo" alt="PalCord Logo">
-      <h1>Discord Bot & Dashboard<br>für <span>Palworld</span> Server</h1>
+      <h1 id="hero-title">Discord Bot & Dashboard<br>für <span>Palworld</span> Server</h1>
       <p id="subtitle">Discord Login mit deiner Discord-ID. Verwalte deine Palworld-Server, den Shop und deine Spieler.</p>
       <div class="hero-buttons">
         <a href="/auth/discord" class="btn" id="login-btn">Mit Discord einloggen</a>
@@ -426,6 +426,7 @@
       applyText();
     }
     function applyText() {
+      document.getElementById('hero-title').innerHTML = T.hero_title || 'Discord Bot & Dashboard<br>für <span>Palworld</span> Server';
       document.getElementById('subtitle').textContent = T.login_subtitle || 'Discord Login mit deiner Discord-ID. Verwalte deine Palworld-Server, den Shop und deine Spieler.';
       document.getElementById('login-btn').textContent = T.login_with_discord || 'Mit Discord einloggen';
       const inviteBtn = document.getElementById('invite-btn');
