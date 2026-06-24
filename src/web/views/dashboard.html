@@ -1329,7 +1329,22 @@
           <form id="giveaway-form">
             <input type="text" id="giveaway-prize" placeholder="${T('giveaway_prize')}" required>
             <div class="form-row">
+              <select id="giveaway-type" required onchange="toggleGiveawayFields()">
+                <option value="item">Item</option>
+                <option value="pal">Pal</option>
+                <option value="egg">Egg</option>
+                <option value="relic">Relic</option>
+                <option value="techpoints">Tech Points</option>
+                <option value="ancienttechpoints">Ancient Tech Points</option>
+                <option value="exp">EXP</option>
+                <option value="coins">Coins</option>
+              </select>
               <input type="number" id="giveaway-winners" placeholder="${T('giveaway_winners')}" value="1" min="1" max="10" required>
+            </div>
+            <input type="text" id="giveaway-prize-id" placeholder="Item/Pal ID">
+            <input type="text" id="giveaway-egg-id" placeholder="Egg type (z.B. PalEgg_Normal_01)" style="display:none;">
+            <div class="form-row">
+              <input type="number" id="giveaway-amount" placeholder="Menge / Level" value="1" min="1" required>
               <input type="datetime-local" id="giveaway-end" required>
             </div>
             <button type="submit" class="btn">${T('add_giveaway')}</button>
@@ -1337,9 +1352,24 @@
         </div>
         <div class="section">
           <h3>${T('giveaways')}</h3>
-          <table id="giveaways-table"><thead><tr><th>${T('giveaway_prize')}</th><th>${T('giveaway_winners')}</th><th>${T('giveaway_end')}</th><th>${T('status')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+          <table id="giveaways-table"><thead><tr><th>${T('giveaway_prize')}</th><th>Typ</th><th>${T('giveaway_winners')}</th><th>${T('giveaway_end')}</th><th>${T('status')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
         </div>
       `;
+    }
+
+    function toggleGiveawayFields() {
+      const type = document.getElementById('giveaway-type').value;
+      const prizeId = document.getElementById('giveaway-prize-id');
+      const eggId = document.getElementById('giveaway-egg-id');
+      if (type === 'coins') {
+        prizeId.style.display = 'none';
+        prizeId.required = false;
+      } else {
+        prizeId.style.display = '';
+        prizeId.required = true;
+      }
+      eggId.style.display = type === 'egg' ? '' : 'none';
+      eggId.required = type === 'egg';
     }
 
     async function loadGiveaways() {
@@ -1352,6 +1382,7 @@
         return `
           <tr>
             <td>${g.prize}</td>
+            <td>${g.prize_type}${g.prize_id ? ` (${g.prize_id})` : ''}</td>
             <td>${g.winners_count}</td>
             <td>${new Date(g.end_time).toLocaleString()}</td>
             <td>${g.status} (${participants} Teilnehmer)</td>
@@ -1359,22 +1390,28 @@
           </tr>
         `;
       }).join('');
-      if (giveaways.length === 0) tbody.innerHTML = `<tr><td colspan="5">${T('no_giveaways')}</td></tr>`;
+      if (giveaways.length === 0) tbody.innerHTML = `<tr><td colspan="6">${T('no_giveaways')}</td></tr>`;
 
+      toggleGiveawayFields();
       const form = document.getElementById('giveaway-form');
       if (form) {
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
           const prize = document.getElementById('giveaway-prize').value;
+          const prizeType = document.getElementById('giveaway-type').value;
+          const prizeId = document.getElementById('giveaway-prize-id').value || null;
+          const prizeAmount = parseInt(document.getElementById('giveaway-amount').value) || 1;
+          const prizeEggId = document.getElementById('giveaway-egg-id').value || null;
           const winners = parseInt(document.getElementById('giveaway-winners').value) || 1;
           const endTime = new Date(document.getElementById('giveaway-end').value).toISOString();
           const res = await fetch(`/api/guilds/${currentGuild}/giveaways`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prize, winners_count: winners, end_time: endTime }),
+            body: JSON.stringify({ prize, prize_type: prizeType, prize_id: prizeId, prize_amount: prizeAmount, prize_level: prizeAmount, prize_egg_id: prizeEggId, winners_count: winners, end_time: endTime }),
           });
           if (res.ok) {
             form.reset();
+            toggleGiveawayFields();
             renderContent();
           } else {
             const data = await res.json();

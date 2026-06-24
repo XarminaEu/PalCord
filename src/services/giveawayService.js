@@ -13,10 +13,10 @@ function getGiveawayById(id) {
   return db.prepare('SELECT * FROM giveaways WHERE id = ?').get(id);
 }
 
-function createGiveaway(guildId, { prize, winnersCount, endTime, channelId, createdBy }) {
+function createGiveaway(guildId, { prize, prizeType, prizeId, prizeAmount, prizeLevel, prizeEggId, winnersCount, endTime, channelId, createdBy }) {
   const result = db.prepare(
-    'INSERT INTO giveaways (guild_id, prize, winners_count, end_time, channel_id, created_by) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(guildId, prize, winnersCount, endTime, channelId, createdBy);
+    'INSERT INTO giveaways (guild_id, prize, prize_type, prize_id, prize_amount, prize_level, prize_egg_id, winners_count, end_time, channel_id, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(guildId, prize, prizeType || 'item', prizeId || null, prizeAmount || 1, prizeLevel || 1, prizeEggId || null, winnersCount, endTime, channelId, createdBy);
   return result.lastInsertRowid;
 }
 

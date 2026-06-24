@@ -206,7 +206,23 @@ const data = new SlashCommandBuilder()
             { name: 'List', de: 'Liste', en: 'List', value: 'list' },
           ]))
       )
-      .addStringOption(opt => opt.setName('prize').setDescription('Prize').setDescriptionLocalizations({ 'de': 'Preis', 'en-US': 'Prize' }).setRequired(false))
+      .addStringOption(opt => opt.setName('prize').setDescription('Prize name').setDescriptionLocalizations({ 'de': 'Preisname', 'en-US': 'Prize name' }).setRequired(false))
+      .addStringOption(opt =>
+        opt.setName('type').setDescription('Prize type').setDescriptionLocalizations({ 'de': 'Preistyp', 'en-US': 'Prize type' }).setRequired(false)
+          .setChoices(...l10nChoices([
+            { name: 'Item', de: 'Item', en: 'Item', value: 'item' },
+            { name: 'Pal', de: 'Pal', en: 'Pal', value: 'pal' },
+            { name: 'Egg', de: 'Ei', en: 'Egg', value: 'egg' },
+            { name: 'Relic', de: 'Relikt', en: 'Relic', value: 'relic' },
+            { name: 'Tech Points', de: 'Tech Punkte', en: 'Tech Points', value: 'techpoints' },
+            { name: 'Ancient Tech Points', de: 'Ancient Tech Punkte', en: 'Ancient Tech Points', value: 'ancienttechpoints' },
+            { name: 'EXP', de: 'EXP', en: 'EXP', value: 'exp' },
+            { name: 'Coins', de: 'Coins', en: 'Coins', value: 'coins' },
+          ]))
+      )
+      .addStringOption(opt => opt.setName('prizeid').setDescription('Item/Pal ID').setDescriptionLocalizations({ 'de': 'Item/Pal ID', 'en-US': 'Item/Pal ID' }).setRequired(false))
+      .addIntegerOption(opt => opt.setName('amount').setDescription('Amount or level').setDescriptionLocalizations({ 'de': 'Menge oder Level', 'en-US': 'Amount or level' }).setMinValue(1).setRequired(false))
+      .addStringOption(opt => opt.setName('egg').setDescription('Egg type for eggs').setDescriptionLocalizations({ 'de': 'Ei-Typ', 'en-US': 'Egg type' }).setRequired(false))
       .addIntegerOption(opt => opt.setName('winners').setDescription('Number of winners').setDescriptionLocalizations({ 'de': 'Anzahl Gewinner', 'en-US': 'Number of winners' }).setMinValue(1).setMaxValue(10).setRequired(false))
       .addIntegerOption(opt => opt.setName('minutes').setDescription('Duration in minutes').setDescriptionLocalizations({ 'de': 'Dauer in Minuten', 'en-US': 'Duration in minutes' }).setMinValue(1).setMaxValue(10080).setRequired(false))
   );

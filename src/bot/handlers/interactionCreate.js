@@ -532,15 +532,28 @@ async function handlePalGiveaway(interaction) {
       return;
     }
     const prize = interaction.options.getString('prize');
+    const prizeType = interaction.options.getString('type') || 'item';
+    const prizeId = interaction.options.getString('prizeid');
+    const amount = interaction.options.getInteger('amount') || 1;
+    const eggType = interaction.options.getString('egg');
     const winners = interaction.options.getInteger('winners') || 1;
     const minutes = interaction.options.getInteger('minutes') || 60;
     if (!prize) {
       await interaction.reply({ content: '❌ Gib einen Preis an.', ephemeral: true });
       return;
     }
+    if (prizeType !== 'coins' && !prizeId) {
+      await interaction.reply({ content: '❌ Gib eine Item/Pal ID an (außer bei Coins).', ephemeral: true });
+      return;
+    }
     const endTime = new Date(Date.now() + minutes * 60000).toISOString();
     const giveawayId = giveawayService.createGiveaway(guildId, {
       prize,
+      prizeType,
+      prizeId,
+      prizeAmount: amount,
+      prizeLevel: amount,
+      prizeEggId: eggType,
       winnersCount: winners,
       endTime,
       channelId: interaction.channelId,
@@ -549,7 +562,7 @@ async function handlePalGiveaway(interaction) {
 
     const embed = new EmbedBuilder()
       .setTitle('🎉 Giveaway')
-      .setDescription(`**Preis:** ${prize}\n**Gewinner:** ${winners}\n**Endet:** ${endTime.replace('T', ' ').substring(0, 16)}`)
+      .setDescription(`**Preis:** ${prize}\n**Typ:** ${prizeType}\n**Gewinner:** ${winners}\n**Endet:** ${endTime.replace('T', ' ').substring(0, 16)}`)
       .setColor(0xe67e22)
       .setFooter({ text: `ID: ${giveawayId}` });
 
@@ -584,12 +597,69 @@ async function handleGiveawayDistribute(interaction, ticketId) {
     await interaction.reply({ content: '❌ Nur Admins/Supporter können das verteilen.', ephemeral: true });
     return;
   }
+  const giveaway = giveawayService.getGiveawayById(ticket.giveaway_id);
+  if (!giveaway) {
+    await interaction.reply({ content: '❌ Giveaway nicht gefunden.', ephemeral: true });
+    return;
+  }
+  const server = guildService.getActiveServer(giveaway.guild_id);
+  if (!server) {
+    await interaction.reply({ content: '❌ Kein aktiver Server für diesen Giveaway.', ephemeral: true });
+    return;
+  }
+  const player = db.prepare('SELECT * FROM players WHERE guild_id = ? AND discord_id = ?').get(giveaway.guild_id, ticket.winner_id);
+  if (!player) {
+    await interaction.reply({ content: `❌ <@${ticket.winner_id}> hat keinen Account verknüpft. Bitte zuerst mit "/pal link <UserId>" verknüpfen.`, ephemeral: true });
+    return;
+  }
+
+  let result = { success: false, error: 'Unknown prize type' };
+  let description = '';
+  const type = giveaway.prize_type;
+  const amount = giveaway.prize_amount || 1;
+
+  if (type === 'item') {
+    const item = db.prepare('SELECT name FROM items WHERE id = ?').get(giveaway.prize_id);
+    result = await rconCommands.giveItem(server, player.user_id, giveaway.prize_id, amount);
+    description = `${amount}x ${item ? item.name : giveaway.prize_id}`;
+  } else if (type === 'pal') {
+    const pal = db.prepare('SELECT name FROM pals WHERE id = ?').get(giveaway.prize_id);
+    result = await rconCommands.givePal(server, player.user_id, giveaway.prize_id, amount);
+    description = `${pal ? pal.name : giveaway.prize_id} (Lvl ${amount})`;
+  } else if (type === 'egg') {
+    const eggType = giveaway.prize_egg_id || 'PalEgg_Normal_01';
+    const pal = db.prepare('SELECT name FROM pals WHERE id = ?').get(giveaway.prize_id);
+    result = await rconCommands.giveEgg(server, player.user_id, eggType, giveaway.prize_id, amount);
+    description = `${eggType} mit ${pal ? pal.name : giveaway.prize_id} (Lvl ${amount})`;
+  } else if (type === 'relic') {
+    result = await rconCommands.giveRelic(server, player.user_id, amount);
+    description = `${amount}x Lifmunk Effigy`;
+  } else if (type === 'techpoints') {
+    result = await rconCommands.giveTechPoints(server, player.user_id, amount);
+    description = `${amount} Tech Points`;
+  } else if (type === 'ancienttechpoints') {
+    result = await rconCommands.giveBossTechPoints(server, player.user_id, amount);
+    description = `${amount} Ancient Tech Points`;
+  } else if (type === 'exp') {
+    result = await rconCommands.giveExp(server, player.user_id, amount);
+    description = `${amount} EXP`;
+  } else if (type === 'coins') {
+    playerService.addCoins(giveaway.guild_id, player.user_id, amount);
+    result = { success: true };
+    description = `${amount} Coins`;
+  }
+
+  if (!result.success) {
+    await interaction.reply({ content: `❌ Verteilen fehlgeschlagen: ${result.error || 'Unbekannter Fehler'}`, ephemeral: true });
+    return;
+  }
+
   giveawayService.setTicketStatus(ticketId, 'distributed');
-  await interaction.reply({ content: `✅ Giveaway-Ticket #${ticketId} als verteilt markiert.`, ephemeral: true });
+  await interaction.reply({ content: `✅ ${description} an <@${ticket.winner_id}> (${player.user_id}) ausgegeben.`, ephemeral: true });
   try {
     const channel = interaction.channel;
     if (channel) {
-      await channel.send(`✅ Giveaway wurde von <@${interaction.user.id}> als verteilt markiert. Herzlichen Glückwunsch nochmal an <@${ticket.winner_id}>!`);
+      await channel.send(`✅ Giveaway-Preis **${description}** wurde von <@${interaction.user.id}> an <@${ticket.winner_id}> ausgegeben. Herzlichen Glückwunsch!`);
       await channel.edit({ permissionOverwrites: [
         { id: channel.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
         { id: ticket.winner_id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] },

@@ -221,6 +221,11 @@ function init() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       guild_id TEXT NOT NULL,
       prize TEXT NOT NULL,
+      prize_type TEXT DEFAULT 'item',
+      prize_id TEXT,
+      prize_amount INTEGER DEFAULT 1,
+      prize_level INTEGER DEFAULT 1,
+      prize_egg_id TEXT,
       winners_count INTEGER DEFAULT 1,
       end_time TEXT NOT NULL,
       participants TEXT DEFAULT '[]',
@@ -251,6 +256,12 @@ function init() {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_giveaway_tickets_giveaway ON giveaway_tickets (giveaway_id);
   `);
+
+  addColumnIfNotExists('giveaways', 'prize_type', 'TEXT DEFAULT \'item\'');
+  addColumnIfNotExists('giveaways', 'prize_id', 'TEXT');
+  addColumnIfNotExists('giveaways', 'prize_amount', 'INTEGER DEFAULT 1');
+  addColumnIfNotExists('giveaways', 'prize_level', 'INTEGER DEFAULT 1');
+  addColumnIfNotExists('giveaways', 'prize_egg_id', 'TEXT');
 
   logger.info('Database initialized successfully.');
 }

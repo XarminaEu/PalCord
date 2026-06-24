@@ -402,10 +402,16 @@ router.get('/api/guilds/:guildId/giveaways', ensureAuthenticated, async (req, re
 router.post('/api/guilds/:guildId/giveaways', ensureAuthenticated, async (req, res) => {
   const { guildId } = req.params;
   if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
-  const { prize, winners_count, end_time, channel_id } = req.body;
+  const { prize, prize_type, prize_id, prize_amount, prize_level, prize_egg_id, winners_count, end_time, channel_id } = req.body;
   if (!prize || !end_time) return res.status(400).json({ error: 'Missing fields' });
+  if (prize_type !== 'coins' && !prize_id) return res.status(400).json({ error: 'Missing prize id' });
   const id = giveawayService.createGiveaway(guildId, {
     prize,
+    prizeType: prize_type || 'item',
+    prizeId: prize_id || null,
+    prizeAmount: parseInt(prize_amount) || 1,
+    prizeLevel: parseInt(prize_level) || parseInt(prize_amount) || 1,
+    prizeEggId: prize_egg_id || null,
     winnersCount: parseInt(winners_count) || 1,
     endTime,
     channelId: channel_id || null,
