@@ -68,6 +68,43 @@ router.get('/imprint', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'imprint.html'));
 });
 
+router.get('/robots.txt', (req, res) => {
+  res.set('Content-Type', 'text/plain');
+  res.send(`User-agent: *\nDisallow: /dashboard\nDisallow: /api/\nDisallow: /auth/\nAllow: /\nAllow: /terms\nAllow: /privacy\nAllow: /imprint\nSitemap: ${config.app.url}/sitemap.xml\n`);
+});
+
+router.get('/sitemap.xml', (req, res) => {
+  res.set('Content-Type', 'application/xml');
+  const today = new Date().toISOString().split('T')[0];
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${config.app.url}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${config.app.url}/terms</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${config.app.url}/privacy</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${config.app.url}/imprint</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>`);
+});
+
 router.get('/api/public/status', async (req, res) => {
   try {
     const anyServer = db.prepare('SELECT * FROM guild_servers WHERE is_active = 1 LIMIT 1').get();
