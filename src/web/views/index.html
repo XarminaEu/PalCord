@@ -125,6 +125,22 @@
       transform: translateY(-2px);
       box-shadow: 0 8px 30px rgba(88, 101, 242, 0.6);
     }
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid var(--accent-2);
+      color: var(--accent-2);
+    }
+    .btn-secondary:hover {
+      background: var(--accent-2);
+      color: #1a1a2e;
+      box-shadow: 0 8px 30px rgba(87, 242, 135, 0.4);
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -259,6 +275,7 @@
     @media (max-width: 600px) {
       .hero h1 { font-size: 2.5rem; }
       .hero p { font-size: 1rem; }
+      .hero-buttons { flex-direction: column; }
       .btn { width: 100%; justify-content: center; }
     }
   </style>
@@ -273,7 +290,10 @@
       <img src="/static/logonotrans.png" class="logo" alt="PalCord Logo">
       <h1>Discord Bot & Dashboard<br>für <span>Palworld</span> Server</h1>
       <p id="subtitle">Discord Login mit deiner Discord-ID. Verwalte deine Palworld-Server, den Shop und deine Spieler.</p>
-      <a href="/auth/discord" class="btn" id="login-btn">Mit Discord einloggen</a>
+      <div class="hero-buttons">
+        <a href="/auth/discord" class="btn" id="login-btn">Mit Discord einloggen</a>
+        <a href="#" class="btn btn-secondary" id="invite-btn" target="_blank" style="display:none;">Bot einladen</a>
+      </div>
     </div>
     <div class="grid">
       <div class="card">
@@ -333,6 +353,22 @@
   </div>
   <script>
     let T = {};
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        const inviteBtn = document.getElementById('invite-btn');
+        if (data.inviteEnabled && data.inviteUrl) {
+          inviteBtn.href = data.inviteUrl;
+          inviteBtn.style.display = 'inline-flex';
+        } else {
+          inviteBtn.style.display = 'none';
+        }
+      } catch (err) {
+        const inviteBtn = document.getElementById('invite-btn');
+        if (inviteBtn) inviteBtn.style.display = 'none';
+      }
+    }
     async function loadLang() {
       const saved = document.cookie.split('; ').find(r => r.startsWith('lang='));
       const lang = saved ? saved.split('=')[1] : navigator.language.startsWith('en') ? 'en' : 'de';
@@ -346,6 +382,8 @@
     function applyText() {
       document.getElementById('subtitle').textContent = T.login_subtitle || 'Discord Login mit deiner Discord-ID. Verwalte deine Palworld-Server, den Shop und deine Spieler.';
       document.getElementById('login-btn').textContent = T.login_with_discord || 'Mit Discord einloggen';
+      const inviteBtn = document.getElementById('invite-btn');
+      if (inviteBtn) inviteBtn.textContent = T.invite_bot || 'Bot einladen';
       document.getElementById('feat-server-title').textContent = T.server || 'Server';
       document.getElementById('feat-server-desc').textContent = T.feat_server_desc || 'Mehrere Palworld-Server pro Discord-Guild verwalten.';
       document.getElementById('feat-shop-title').textContent = T.shop || 'Shop';
@@ -418,6 +456,7 @@
       document.body.style.overflow = '';
     }
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+    loadConfig();
     loadLang();
   </script>
 

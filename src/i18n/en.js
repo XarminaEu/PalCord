@@ -2,6 +2,7 @@ module.exports = {
   // General
   app_name: 'PalCord',
   login_with_discord: 'Login with Discord',
+  invite_bot: 'Invite Bot',
   logout: 'Logout',
   welcome: 'Welcome',
   dashboard: 'Dashboard',

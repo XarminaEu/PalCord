@@ -255,6 +255,15 @@ router.get('/api/data/counts', (req, res) => {
   res.json(dataImportService.getCounts());
 });
 
+router.get('/api/config', (req, res) => {
+  res.json({
+    inviteEnabled: config.discord.inviteEnabled,
+    inviteUrl: config.discord.inviteEnabled && config.discord.clientId
+      ? `https://discord.com/oauth2/authorize?client_id=${config.discord.clientId}&permissions=${config.discord.invitePermissions}&scope=bot%20applications.commands`
+      : null,
+  });
+});
+
 router.post('/api/data/import', ensureAuthenticated, async (req, res) => {
   if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
   try {

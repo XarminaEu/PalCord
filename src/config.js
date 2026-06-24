@@ -15,6 +15,8 @@ module.exports = {
     guildId: process.env.DISCORD_GUILD_ID,
     clientSecret: process.env.DISCORD_CLIENT_SECRET,
     callbackUrl: process.env.DISCORD_CALLBACK_URL || 'http://localhost:5996/auth/discord/callback',
+    inviteEnabled: process.env.DISCORD_INVITE_ENABLED === 'true',
+    invitePermissions: process.env.DISCORD_INVITE_PERMISSIONS || '8',
   },
   app: {
     port: parseInt(process.env.APP_PORT || '5996', 10),
