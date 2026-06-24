@@ -460,14 +460,28 @@
       const lines = [data.name, data.address, data.city, data.country].filter(Boolean);
       const address = lines.length ? lines.join('<br>') : (T.imprint_not_configured || 'Impressum noch nicht konfiguriert.');
       const email = data.email ? `<a href="mailto:${data.email}">${data.email}</a>` : '';
+      const phone = data.phone ? `<a href="tel:${data.phone}">${data.phone}</a>` : '';
+      const vat = data.vatId ? `<p>${T.imprint_vat_id || 'Umsatzsteuer-ID'}: ${data.vatId}</p>` : '';
+      const reg = data.businessRegistration ? `<p>${T.imprint_business_registration || 'Handelsregister'}: ${data.businessRegistration}</p>` : '';
+      const business = vat || reg ? `${vat}${reg}` : `<p>${T.imprint_no_business_data || 'Keine Angaben erforderlich.'}</p>`;
+      const responsible = data.responsiblePerson || data.name;
+      const disclaimer = data.disclaimer || (T.imprint_default_disclaimer || 'Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.');
+      const platformLink = data.platformLink || 'https://ec.europa.eu/consumers/odr/';
       return `
         <h1>${T.imprint_title || 'Impressum'}</h1>
-        <h2>${T.imprint_responsible || 'Verantwortlich für den Inhalt'}</h2>
+        <h2>${T.imprint_provider || 'Diensteanbieter gemäß § 5 TMG'}</h2>
         <p>${address}</p>
-        <h2>${T.imprint_legal || 'Angaben gemäß § 5 TMG'}</h2>
-        <p>${T.imprint_legal_text || 'Diese Website wird von der oben genannten Person betrieben.'}</p>
         <h2>${T.imprint_contact || 'Kontakt'}</h2>
-        <p>${T.imprint_email || 'E-Mail'}: ${email || '-'}</p>
+        ${data.email ? `<p>${T.imprint_email || 'E-Mail'}: ${email}</p>` : ''}
+        ${data.phone ? `<p>${T.imprint_phone || 'Telefon'}: ${phone}</p>` : ''}
+        <h2>${T.imprint_business_title || 'Umsatzsteuer-ID / Handelsregister'}</h2>
+        ${business}
+        <h2>${T.imprint_responsible || 'Redaktionell verantwortlich'}</h2>
+        <p>${responsible}</p>
+        <h2>${T.imprint_disclaimer || 'Haftungsausschluss'}</h2>
+        <p>${disclaimer}</p>
+        <h2>${T.imprint_platform || 'EU-Streitschlichtung'}</h2>
+        <p>${T.imprint_platform_text || 'Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:'} <a href="${platformLink}" target="_blank" rel="noopener noreferrer">${platformLink}</a></p>
         <div class="footer"><a href="#" onclick="closeModal(); return false;">${T.back_to_home || 'Zurück zur Startseite'}</a></div>
       `;
     }

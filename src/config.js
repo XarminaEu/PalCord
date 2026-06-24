@@ -38,5 +38,11 @@ module.exports = {
     city: process.env.IMPRINT_CITY || '',
     country: process.env.IMPRINT_COUNTRY || '',
     email: process.env.IMPRINT_EMAIL || '',
+    phone: process.env.IMPRINT_PHONE || '',
+    vatId: process.env.IMPRINT_VAT_ID || '',
+    businessRegistration: process.env.IMPRINT_BUSINESS_REGISTRATION || '',
+    responsiblePerson: process.env.IMPRINT_RESPONSIBLE_PERSON || '',
+    disclaimer: process.env.IMPRINT_DISCLAIMER || '',
+    platformLink: process.env.IMPRINT_PLATFORM_LINK || 'https://ec.europa.eu/consumers/odr/',
   },
 };

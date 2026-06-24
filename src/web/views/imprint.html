@@ -71,6 +71,8 @@
     a:hover { text-decoration: underline; }
     .footer { margin-top: 2rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
     .address { color: var(--muted); line-height: 1.8; }
+    .contact-list p { color: var(--muted); margin-bottom: 0.5rem; }
+    .contact-list a { color: var(--accent-2); word-break: break-all; }
   </style>
 </head>
 <body>
@@ -81,16 +83,25 @@
   <div class="container">
     <h1 id="title">Impressum</h1>
 
-    <h2 id="responsible-title">Verantwortlich für den Inhalt</h2>
+    <h2 id="provider-title">Diensteanbieter gemäß § 5 TMG</h2>
     <div class="address" id="imprint-address">
       Lade Impressum...
     </div>
 
-    <h2 id="legal-title">Angaben gemäß § 5 TMG</h2>
-    <p id="legal-text">Diese Website wird von der oben genannten Person betrieben.</p>
-
     <h2 id="contact-title">Kontakt</h2>
-    <p id="contact-text">E-Mail: <a id="email-link" href="mailto:"></a></p>
+    <div class="contact-list" id="contact-list"></div>
+
+    <h2 id="vat-title">Umsatzsteuer-ID / Handelsregister</h2>
+    <div class="contact-list" id="business-list"></div>
+
+    <h2 id="responsible-title">Redaktionell verantwortlich</h2>
+    <p id="responsible-text"></p>
+
+    <h2 id="disclaimer-title">Haftungsausschluss</h2>
+    <p id="disclaimer-text"></p>
+
+    <h2 id="platform-title">EU-Streitschlichtung</h2>
+    <p id="platform-text">Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: <a id="platform-link" href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer">https://ec.europa.eu/consumers/odr/</a></p>
 
     <div class="footer"><a href="/" id="back">Zurück zur Startseite</a></div>
   </div>
@@ -109,35 +120,55 @@
       const res = await fetch('/api/imprint');
       const data = await res.json();
       const address = document.getElementById('imprint-address');
-      const emailLink = document.getElementById('email-link');
+      const contactList = document.getElementById('contact-list');
+      const businessList = document.getElementById('business-list');
+      const responsibleText = document.getElementById('responsible-text');
+      const disclaimerText = document.getElementById('disclaimer-text');
+      const platformLink = document.getElementById('platform-link');
+
       if (!data.name) {
         address.textContent = T.imprint_not_configured || 'Impressum noch nicht konfiguriert.';
-        emailLink.textContent = '';
-        emailLink.href = 'mailto:';
+        contactList.innerHTML = '';
+        businessList.innerHTML = '';
+        responsibleText.textContent = '';
+        disclaimerText.textContent = '';
         return;
       }
+
       address.innerHTML = [
         data.name,
         data.address,
         data.city,
         data.country
       ].filter(Boolean).join('<br>');
-      if (data.email) {
-        emailLink.textContent = data.email;
-        emailLink.href = 'mailto:' + data.email;
-      } else {
-        emailLink.textContent = '';
-        emailLink.href = 'mailto:';
+
+      contactList.innerHTML = [
+        data.email ? `<p>${T.imprint_email || 'E-Mail'}: <a href="mailto:${data.email}">${data.email}</a></p>` : '',
+        data.phone ? `<p>${T.imprint_phone || 'Telefon'}: <a href="tel:${data.phone}">${data.phone}</a></p>` : ''
+      ].filter(Boolean).join('');
+
+      businessList.innerHTML = [
+        data.vatId ? `<p>${T.imprint_vat_id || 'Umsatzsteuer-ID'}: ${data.vatId}</p>` : '',
+        data.businessRegistration ? `<p>${T.imprint_business_registration || 'Handelsregister'}: ${data.businessRegistration}</p>` : ''
+      ].filter(Boolean).join('') || `<p>${T.imprint_no_business_data || 'Keine Angaben erforderlich.'}</p>`;
+
+      responsibleText.textContent = data.responsiblePerson || data.name;
+      disclaimerText.textContent = data.disclaimer || (T.imprint_default_disclaimer || 'Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.');
+      if (data.platformLink) {
+        platformLink.href = data.platformLink;
+        platformLink.textContent = data.platformLink;
       }
     }
     function applyText() {
       document.title = (T.imprint_title || 'Impressum') + ' - PalCord';
       document.getElementById('title').textContent = T.imprint_title || 'Impressum';
-      document.getElementById('responsible-title').textContent = T.imprint_responsible || 'Verantwortlich für den Inhalt';
-      document.getElementById('legal-title').textContent = T.imprint_legal || 'Angaben gemäß § 5 TMG';
-      document.getElementById('legal-text').textContent = T.imprint_legal_text || 'Diese Website wird von der oben genannten Person betrieben.';
+      document.getElementById('provider-title').textContent = T.imprint_provider || 'Diensteanbieter gemäß § 5 TMG';
       document.getElementById('contact-title').textContent = T.imprint_contact || 'Kontakt';
-      document.getElementById('contact-text').innerHTML = (T.imprint_email || 'E-Mail') + ': <a id="email-link" href="mailto:"></a>';
+      document.getElementById('vat-title').textContent = T.imprint_business_title || 'Umsatzsteuer-ID / Handelsregister';
+      document.getElementById('responsible-title').textContent = T.imprint_responsible || 'Redaktionell verantwortlich';
+      document.getElementById('disclaimer-title').textContent = T.imprint_disclaimer || 'Haftungsausschluss';
+      document.getElementById('platform-title').textContent = T.imprint_platform || 'EU-Streitschlichtung';
+      document.getElementById('platform-text').innerHTML = (T.imprint_platform_text || 'Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:') + ' <a id="platform-link" href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer">https://ec.europa.eu/consumers/odr/</a>';
       document.getElementById('back').textContent = T.back_to_home || 'Zurück zur Startseite';
       loadImprint();
     }
