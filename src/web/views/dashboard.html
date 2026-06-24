@@ -1341,7 +1341,8 @@
               </select>
               <input type="number" id="giveaway-winners" placeholder="${T('giveaway_winners')}" value="1" min="1" max="10" required>
             </div>
-            <input type="text" id="giveaway-prize-id" placeholder="Item/Pal ID">
+            <select id="giveaway-prize-id" style="display:none;"><option value="">Item/Pal wählen...</option></select>
+            <input type="text" id="giveaway-prize-id-text" placeholder="Item/Pal ID" style="display:none;">
             <input type="text" id="giveaway-egg-id" placeholder="Egg type (z.B. PalEgg_Normal_01)" style="display:none;">
             <div class="form-row">
               <input type="number" id="giveaway-amount" placeholder="Menge / Level" value="1" min="1" required>
@@ -1357,32 +1358,68 @@
       `;
     }
 
+    let giveawayItems = [];
+    let giveawayPals = [];
+
+    async function loadGiveawayOptions() {
+      const [itemsRes, palsRes] = await Promise.all([
+        fetch('/api/items?search='),
+        fetch('/api/pals?search='),
+      ]);
+      giveawayItems = await itemsRes.json();
+      giveawayPals = await palsRes.json();
+    }
+
     function toggleGiveawayFields() {
       const type = document.getElementById('giveaway-type').value;
-      const prizeId = document.getElementById('giveaway-prize-id');
+      const prizeIdSelect = document.getElementById('giveaway-prize-id');
+      const prizeIdText = document.getElementById('giveaway-prize-id-text');
       const eggId = document.getElementById('giveaway-egg-id');
-      if (type === 'coins') {
-        prizeId.style.display = 'none';
-        prizeId.required = false;
+      const needsSelect = type === 'item' || type === 'pal' || type === 'egg';
+      const needsText = type === 'relic' || type === 'techpoints' || type === 'ancienttechpoints' || type === 'exp';
+      const needsId = needsSelect || needsText;
+
+      if (needsSelect) {
+        prizeIdSelect.style.display = '';
+        prizeIdSelect.required = true;
+        prizeIdText.style.display = 'none';
+        prizeIdText.required = false;
+        const options = type === 'pal' || type === 'egg' ? giveawayPals : giveawayItems;
+        prizeIdSelect.innerHTML = '<option value="">' + (type === 'egg' ? 'Pal für Ei wählen...' : (type === 'pal' ? 'Pal wählen...' : 'Item wählen...')) + '</option>' +
+          options.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+      } else if (needsText) {
+        prizeIdSelect.style.display = 'none';
+        prizeIdSelect.required = false;
+        prizeIdText.style.display = '';
+        prizeIdText.required = true;
+        prizeIdText.value = type;
       } else {
-        prizeId.style.display = '';
-        prizeId.required = true;
+        prizeIdSelect.style.display = 'none';
+        prizeIdSelect.required = false;
+        prizeIdText.style.display = 'none';
+        prizeIdText.required = false;
       }
       eggId.style.display = type === 'egg' ? '' : 'none';
       eggId.required = type === 'egg';
     }
 
     async function loadGiveaways() {
+      await loadGiveawayOptions();
       const res = await fetch(`/api/guilds/${currentGuild}/giveaways`);
       const giveaways = await res.json();
       const tbody = document.querySelector('#giveaways-table tbody');
       if (!tbody) return;
       tbody.innerHTML = giveaways.map(g => {
         const participants = JSON.parse(g.participants || '[]').length;
+        const optionName = (type => {
+          if (type === 'item') return giveawayItems.find(i => i.id === g.prize_id)?.name || g.prize_id;
+          if (type === 'pal' || type === 'egg') return giveawayPals.find(p => p.id === g.prize_id)?.name || g.prize_id;
+          return g.prize_id || '';
+        })(g.prize_type);
         return `
           <tr>
             <td>${g.prize}</td>
-            <td>${g.prize_type}${g.prize_id ? ` (${g.prize_id})` : ''}</td>
+            <td>${g.prize_type}${optionName ? ` (${optionName})` : ''}</td>
             <td>${g.winners_count}</td>
             <td>${new Date(g.end_time).toLocaleString()}</td>
             <td>${g.status} (${participants} Teilnehmer)</td>
@@ -1399,7 +1436,9 @@
           e.preventDefault();
           const prize = document.getElementById('giveaway-prize').value;
           const prizeType = document.getElementById('giveaway-type').value;
-          const prizeId = document.getElementById('giveaway-prize-id').value || null;
+          const prizeIdSelect = document.getElementById('giveaway-prize-id');
+          const prizeIdText = document.getElementById('giveaway-prize-id-text');
+          const prizeId = prizeIdSelect.style.display !== 'none' ? (prizeIdSelect.value || null) : (prizeIdText.value || null);
           const prizeAmount = parseInt(document.getElementById('giveaway-amount').value) || 1;
           const prizeEggId = document.getElementById('giveaway-egg-id').value || null;
           const winners = parseInt(document.getElementById('giveaway-winners').value) || 1;

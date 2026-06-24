@@ -1099,8 +1099,27 @@ async function handleGivecoinsPlayer(interaction, guildId) {
   await interaction.showModal(modal);
 }
 
+async function handleAutocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+  if (focused.name !== 'prizeid') return;
+  const type = interaction.options.getString('type') || 'item';
+  const search = focused.value.toLowerCase();
+  let choices = [];
+  if (type === 'item') {
+    const items = db.prepare('SELECT id, name FROM items WHERE name LIKE ? ORDER BY name LIMIT 25').all(`%${search}%`);
+    choices = items.map(i => ({ name: i.name, value: i.id }));
+  } else if (type === 'pal' || type === 'egg') {
+    const pals = db.prepare('SELECT id, name FROM pals WHERE is_boss = 0 AND name LIKE ? ORDER BY name LIMIT 25').all(`%${search}%`);
+    choices = pals.map(p => ({ name: p.name, value: p.id }));
+  }
+  await interaction.respond(choices.length ? choices : []);
+}
+
 module.exports = async function interactionCreateHandler(client, interaction) {
   try {
+    if (interaction.isAutocomplete()) {
+      return await handleAutocomplete(interaction);
+    }
     if (interaction.isChatInputCommand()) {
       const subcommand = interaction.options.getSubcommand();
       switch (subcommand) {

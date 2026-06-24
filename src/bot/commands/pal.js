@@ -220,7 +220,7 @@ const data = new SlashCommandBuilder()
             { name: 'Coins', de: 'Coins', en: 'Coins', value: 'coins' },
           ]))
       )
-      .addStringOption(opt => opt.setName('prizeid').setDescription('Item/Pal ID').setDescriptionLocalizations({ 'de': 'Item/Pal ID', 'en-US': 'Item/Pal ID' }).setRequired(false))
+      .addStringOption(opt => opt.setName('prizeid').setDescription('Item/Pal ID').setDescriptionLocalizations({ 'de': 'Item/Pal ID', 'en-US': 'Item/Pal ID' }).setAutocomplete(true).setRequired(false))
       .addIntegerOption(opt => opt.setName('amount').setDescription('Amount or level').setDescriptionLocalizations({ 'de': 'Menge oder Level', 'en-US': 'Amount or level' }).setMinValue(1).setRequired(false))
       .addStringOption(opt => opt.setName('egg').setDescription('Egg type for eggs').setDescriptionLocalizations({ 'de': 'Ei-Typ', 'en-US': 'Egg type' }).setRequired(false))
       .addIntegerOption(opt => opt.setName('winners').setDescription('Number of winners').setDescriptionLocalizations({ 'de': 'Anzahl Gewinner', 'en-US': 'Number of winners' }).setMinValue(1).setMaxValue(10).setRequired(false))
