@@ -36,8 +36,10 @@ function importPals(pals) {
 }
 
 function importTechnologies(technologies) {
+  const clearTech = db.prepare('DELETE FROM technologies');
   const insertTech = db.prepare('INSERT OR REPLACE INTO technologies (name, asset) VALUES (?, ?)');
   const transaction = db.transaction((data) => {
+    clearTech.run();
     for (const tech of data) {
       insertTech.run(tech.name, tech.asset);
     }
