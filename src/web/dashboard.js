@@ -313,24 +313,20 @@ router.delete('/api/guilds/:guildId/broadcasts/:id', ensureAuthenticated, (req, 
 
 router.get('/api/guilds', ensureAuthenticated, (req, res) => {
   const botGuildIds = getBotGuildIds();
-  const guilds = (req.user.guilds || []).map(g => {
-    const dbGuild = guildService.getGuild(g.id);
-    const botPresent = botGuildIds.has(g.id);
-    const permissions = 8; // Administrator
-    const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${config.discord.clientId}&permissions=${permissions}&scope=bot%20applications.commands&guild_id=${g.id}`;
-    return {
-      id: g.id,
-      name: g.name,
-      icon: g.icon,
-      owner: g.owner,
-      hasServer: !!dbGuild,
-      isAdmin: isGuildAdmin(req, g.id),
-      botPresent,
-      inviteUrl,
-    };
-  });
-  // Aktive zuerst
-  guilds.sort((a, b) => (b.botPresent === a.botPresent ? 0 : b.botPresent ? 1 : -1));
+  const guilds = (req.user.guilds || [])
+    .filter(g => botGuildIds.has(g.id))
+    .map(g => {
+      const dbGuild = guildService.getGuild(g.id);
+      return {
+        id: g.id,
+        name: g.name,
+        icon: g.icon,
+        owner: g.owner,
+        hasServer: !!dbGuild,
+        isAdmin: isGuildAdmin(req, g.id),
+        botPresent: true,
+      };
+    });
   res.json(guilds);
 });
 
