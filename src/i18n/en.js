@@ -121,6 +121,11 @@ module.exports = {
   feat_server_desc: 'Manage multiple Palworld servers per Discord guild.',
   feat_shop_desc: 'Sell items, pals and eggs for coins.',
   feat_players_desc: 'Players, platform and playtime at a glance.',
+  feat_bases_desc: 'Manage player bases and display them on a map.',
+  feat_economy_desc: 'Daily rewards, transfers and coin system.',
+  feat_broadcasts_desc: 'Scheduled and instant in-game messages.',
+  feat_admin_desc: 'Kick, ban, whitelist, save, shutdown and set time.',
+  feat_settings_desc: 'Welcome messages, auto roles, rules and more.',
 
   // Bases
   bases: 'Bases',
