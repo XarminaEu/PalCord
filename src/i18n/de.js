@@ -277,4 +277,6 @@ module.exports = {
   rules: 'Regeln',
   server_rules: 'Server-Regeln',
   no_rules: 'Es wurden noch keine Regeln hinterlegt.',
+  admin_role: 'Admin-Rolle',
+  admin_role_help: 'Nutzer mit dieser Discord-Rolle erhalten Admin-Zugriff im Dashboard.',
 };

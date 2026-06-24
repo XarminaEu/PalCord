@@ -1329,6 +1329,9 @@
             <select id="notification_channel_id"><option value="">—</option></select>
             <label>${T('daily_reminder_channel')}</label>
             <select id="daily_reminder_channel_id"><option value="">—</option></select>
+            <label>${T('admin_role')}</label>
+            <p style="color:var(--muted);font-size:0.85rem;margin:-0.5rem 0 0.5rem;">${T('admin_role_help')}</p>
+            <select id="admin_role_id"><option value="">—</option></select>
             <label>${T('rules_config')}</label>
             <textarea id="rules" rows="6" placeholder="Server-Regeln..."></textarea>
             <button type="submit" class="btn">${T('save')}</button>
@@ -1357,6 +1360,7 @@
       populateSelect('notification_channel_id', channels, settings.notification_channel_id);
       populateSelect('daily_reminder_channel_id', channels, settings.daily_reminder_channel_id);
       populateSelect('auto_role_id', roles, settings.auto_role_id);
+      populateSelect('admin_role_id', roles, settings.admin_role_id);
       document.getElementById('rules').value = settings.rules || '';
 
       document.getElementById('settings-form').addEventListener('submit', async (e) => {
@@ -1366,6 +1370,7 @@
           auto_role_id: document.getElementById('auto_role_id').value,
           notification_channel_id: document.getElementById('notification_channel_id').value,
           daily_reminder_channel_id: document.getElementById('daily_reminder_channel_id').value,
+          admin_role_id: document.getElementById('admin_role_id').value,
           rules: document.getElementById('rules').value.trim(),
         };
         const res = await fetch(`/api/guilds/${currentGuild}/settings`, {

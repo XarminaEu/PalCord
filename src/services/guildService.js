@@ -48,6 +48,29 @@ function isGuildAdmin(guildId, discordId) {
   return user.role === 'admin' || user.is_global_admin === 1;
 }
 
+function getGuildOwnerId(guildId) {
+  const guild = db.prepare('SELECT owner_id FROM guilds WHERE id = ?').get(guildId);
+  return guild ? guild.owner_id : null;
+}
+
+function getAdminRoleId(guildId) {
+  return getServerConfig(guildId, 'admin_role_id') || '';
+}
+
+async function hasDiscordAdminRole(guildId, discordId, discordClient) {
+  const adminRoleId = getAdminRoleId(guildId);
+  if (!adminRoleId || !discordClient || !discordClient.guilds) return false;
+  try {
+    const guild = discordClient.guilds.cache.get(guildId);
+    if (!guild) return false;
+    const member = await guild.members.fetch(discordId);
+    if (!member) return false;
+    return member.roles.cache.has(adminRoleId);
+  } catch (err) {
+    return false;
+  }
+}
+
 function getGuildServers(guildId) {
   return db.prepare('SELECT * FROM guild_servers WHERE guild_id = ? ORDER BY id').all(guildId);
 }
@@ -148,6 +171,9 @@ module.exports = {
   ensureGuildUser,
   getGuildUser,
   isGuildAdmin,
+  getGuildOwnerId,
+  getAdminRoleId,
+  hasDiscordAdminRole,
   getGuildServers,
   getGuildServer,
   getActiveServer,

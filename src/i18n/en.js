@@ -277,4 +277,6 @@ module.exports = {
   rules: 'Rules',
   server_rules: 'Server Rules',
   no_rules: 'No rules have been set yet.',
+  admin_role: 'Admin Role',
+  admin_role_help: 'Users with this Discord role get admin access in the dashboard.',
 };
