@@ -19,7 +19,7 @@ module.exports = {
     invitePermissions: process.env.DISCORD_INVITE_PERMISSIONS || '8',
   },
   paypal: {
-    address: process.env.PAYPAL_ADDRESS || '',
+    url: process.env.PAYPAL_URL || process.env.PAYPAL_ADDRESS || '',
   },
   app: {
     port: parseInt(process.env.APP_PORT || '5996', 10),

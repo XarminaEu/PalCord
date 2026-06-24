@@ -256,10 +256,7 @@ router.get('/api/data/counts', (req, res) => {
 });
 
 router.get('/api/config', (req, res) => {
-  const paypalAddress = config.paypal.address;
-  const paypalUrl = paypalAddress
-    ? (paypalAddress.startsWith('http') ? paypalAddress : `https://www.paypal.com/donate?business=${encodeURIComponent(paypalAddress)}`)
-    : null;
+  const paypalUrl = buildPaypalUrl(config.paypal.url);
   res.json({
     inviteEnabled: config.discord.inviteEnabled,
     inviteUrl: config.discord.inviteEnabled && config.discord.clientId
@@ -268,6 +265,13 @@ router.get('/api/config', (req, res) => {
     paypalUrl,
   });
 });
+
+function buildPaypalUrl(raw) {
+  if (!raw) return null;
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  if (raw.includes('paypal.me/')) return `https://${raw.replace(/^https?:\/\//, '')}`;
+  return `https://www.paypal.com/paypalme/${encodeURIComponent(raw)}`;
+}
 
 router.post('/api/data/import', ensureAuthenticated, async (req, res) => {
   if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
