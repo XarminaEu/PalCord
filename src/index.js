@@ -3,6 +3,7 @@ const { seed } = require('./database/seed');
 const bot = require('./bot/client');
 const api = require('./api/server');
 const scheduledBroadcastService = require('./services/scheduledBroadcastService');
+const giveawaySchedulerService = require('./services/giveawaySchedulerService');
 const copyrightService = require('./services/copyrightService');
 const logger = require('./logger');
 
@@ -19,6 +20,7 @@ const logger = require('./logger');
     await bot.start();
     api.start();
     scheduledBroadcastService.startScheduler();
+    giveawaySchedulerService.startScheduler(bot.client);
   } catch (err) {
     logger.error(`Startup failed: ${err.message}`);
     process.exit(1);

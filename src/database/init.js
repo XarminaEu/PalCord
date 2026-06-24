@@ -216,6 +216,42 @@ function init() {
     CREATE INDEX IF NOT EXISTS idx_copyright_logs_key ON copyright_logs (api_key);
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS giveaways (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id TEXT NOT NULL,
+      prize TEXT NOT NULL,
+      winners_count INTEGER DEFAULT 1,
+      end_time TEXT NOT NULL,
+      participants TEXT DEFAULT '[]',
+      status TEXT DEFAULT 'active',
+      channel_id TEXT,
+      message_id TEXT,
+      created_by TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_giveaways_guild_status ON giveaways (guild_id, status);
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS giveaway_tickets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      giveaway_id INTEGER NOT NULL,
+      winner_id TEXT NOT NULL,
+      channel_id TEXT,
+      status TEXT DEFAULT 'open',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (giveaway_id) REFERENCES giveaways(id) ON DELETE CASCADE
+    );
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_giveaway_tickets_giveaway ON giveaway_tickets (giveaway_id);
+  `);
+
   logger.info('Database initialized successfully.');
 }
 

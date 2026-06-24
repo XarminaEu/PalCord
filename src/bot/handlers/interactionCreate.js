@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const serverStatusService = require('../../services/serverStatusService');
 const playerService = require('../../services/playerService');
 const shopService = require('../../services/shopService');
@@ -11,6 +11,7 @@ const baseEmbed = require('../embeds/baseEmbed');
 const db = require('../../database/db');
 const logger = require('../../logger');
 const { t } = require('../../i18n');
+const giveawayService = require('../../services/giveawayService');
 
 function getLang(interaction) {
   const guildId = interaction.guildId || interaction.guild?.id;
@@ -509,6 +510,96 @@ async function handlePalRules(interaction) {
   await interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
+async function handlePalGiveaway(interaction) {
+  const { guildId } = getGuildContext(interaction);
+  if (!guildId) {
+    await interaction.reply({ content: '❌ ' + __('cmd_guild_only'), ephemeral: true });
+    return;
+  }
+  const action = interaction.options.getString('action');
+  if (action === 'list') {
+    const giveaways = giveawayService.getActiveGiveaways(guildId);
+    const embed = new EmbedBuilder()
+      .setTitle('🎉 Aktive Giveaways')
+      .setColor(0xe67e22)
+      .setDescription(giveaways.length ? giveaways.map(g => `**${g.prize}** – endet ${g.end_time}`).join('\n') : 'Keine aktiven Giveaways.');
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+  if (action === 'create') {
+    if (!isAdmin(interaction)) {
+      await interaction.reply({ content: __('error_admin_only'), ephemeral: true });
+      return;
+    }
+    const prize = interaction.options.getString('prize');
+    const winners = interaction.options.getInteger('winners') || 1;
+    const minutes = interaction.options.getInteger('minutes') || 60;
+    if (!prize) {
+      await interaction.reply({ content: '❌ Gib einen Preis an.', ephemeral: true });
+      return;
+    }
+    const endTime = new Date(Date.now() + minutes * 60000).toISOString();
+    const giveawayId = giveawayService.createGiveaway(guildId, {
+      prize,
+      winnersCount: winners,
+      endTime,
+      channelId: interaction.channelId,
+      createdBy: interaction.user.id,
+    });
+
+    const embed = new EmbedBuilder()
+      .setTitle('🎉 Giveaway')
+      .setDescription(`**Preis:** ${prize}\n**Gewinner:** ${winners}\n**Endet:** ${endTime.replace('T', ' ').substring(0, 16)}`)
+      .setColor(0xe67e22)
+      .setFooter({ text: `ID: ${giveawayId}` });
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`giveaway_join_${giveawayId}`)
+        .setLabel('Teilnehmen')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    const message = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+    giveawayService.updateGiveawayMessage(giveawayId, message.id);
+  }
+}
+
+async function handleGiveawayJoin(interaction, giveawayId) {
+  const added = giveawayService.addParticipant(giveawayId, interaction.user.id);
+  if (!added) {
+    await interaction.reply({ content: 'Du nimmst bereits an diesem Giveaway teil.', ephemeral: true });
+    return;
+  }
+  await interaction.reply({ content: '✅ Du nimmst jetzt am Giveaway teil!', ephemeral: true });
+}
+
+async function handleGiveawayDistribute(interaction, ticketId) {
+  const ticket = giveawayService.getTicketById(ticketId);
+  if (!ticket) {
+    await interaction.reply({ content: '❌ Ticket nicht gefunden.', ephemeral: true });
+    return;
+  }
+  if (!isAdmin(interaction)) {
+    await interaction.reply({ content: '❌ Nur Admins/Supporter können das verteilen.', ephemeral: true });
+    return;
+  }
+  giveawayService.setTicketStatus(ticketId, 'distributed');
+  await interaction.reply({ content: `✅ Giveaway-Ticket #${ticketId} als verteilt markiert.`, ephemeral: true });
+  try {
+    const channel = interaction.channel;
+    if (channel) {
+      await channel.send(`✅ Giveaway wurde von <@${interaction.user.id}> als verteilt markiert. Herzlichen Glückwunsch nochmal an <@${ticket.winner_id}>!`);
+      await channel.edit({ permissionOverwrites: [
+        { id: channel.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: ticket.winner_id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] },
+      ]});
+    }
+  } catch (e) {
+    logger.warn(`Could not lock giveaway ticket channel: ${e.message}`);
+  }
+}
+
 async function handlePlayerListButton(interaction, guildId) {
   const server = guildService.getActiveServer(guildId);
   if (!server) {
@@ -964,6 +1055,7 @@ module.exports = async function interactionCreateHandler(client, interaction) {
         case 'stats': return await handlePalStats(interaction);
         case 'announce': return await handlePalAnnounce(interaction);
         case 'rules': return await handlePalRules(interaction);
+        case 'giveaway': return await handlePalGiveaway(interaction);
       }
     }
 
@@ -998,6 +1090,10 @@ module.exports = async function interactionCreateHandler(client, interaction) {
       }
       const playerMatch = customId.match(/^player_(\d+)_(kick|givecoins|teleport)_(.+)$/);
       if (playerMatch) return await handlePlayerDetailButton(interaction, customId, playerMatch[1]);
+      const giveawayJoin = customId.match(/^giveaway_join_(\d+)$/);
+      if (giveawayJoin) return await handleGiveawayJoin(interaction, giveawayJoin[1]);
+      const giveawayDistribute = customId.match(/^giveaway_distribute_(\d+)$/);
+      if (giveawayDistribute) return await handleGiveawayDistribute(interaction, giveawayDistribute[1]);
     }
 
     if (interaction.isStringSelectMenu()) {

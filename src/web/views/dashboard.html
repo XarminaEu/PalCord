@@ -354,6 +354,7 @@
           <div class="tab ${activeTab === 'bases' ? 'active' : ''}" onclick="activeTab='bases';renderContent();">${T('bases')}</div>
           <div class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="activeTab='users';renderContent();">${T('users')}</div>
           <div class="tab ${activeTab === 'admin' ? 'active' : ''}" onclick="activeTab='admin';renderContent();">${T('admin')}</div>
+          <div class="tab ${activeTab === 'giveaways' ? 'active' : ''}" onclick="activeTab='giveaways';renderContent();">${T('giveaways')}</div>
           <div class="tab ${activeTab === 'settings' ? 'active' : ''}" onclick="activeTab='settings';renderContent();">${T('settings')}</div>
           ${dataTab}
         </div>
@@ -402,6 +403,7 @@
       else if (activeTab === 'bases') view = basesView();
       else if (activeTab === 'users') view = usersView();
       else if (activeTab === 'admin') view = adminView();
+      else if (activeTab === 'giveaways') view = giveawaysView();
       else if (activeTab === 'settings') view = settingsView();
       else if (activeTab === 'data') view = dataView();
       c.innerHTML = tabs + view;
@@ -413,6 +415,7 @@
       else if (activeTab === 'bases') loadBases();
       else if (activeTab === 'users') loadUsers();
       else if (activeTab === 'admin') loadAdmin();
+      else if (activeTab === 'giveaways') loadGiveaways();
       else if (activeTab === 'settings') loadSettings();
       else if (activeTab === 'data') loadDataImport();
     }
@@ -1317,6 +1320,74 @@
       const el = document.getElementById('rules-content');
       if (!el) return;
       el.textContent = data.rules || T('no_rules');
+    }
+
+    function giveawaysView() {
+      return `
+        <div class="section">
+          <h3>${T('create_giveaway')}</h3>
+          <form id="giveaway-form">
+            <input type="text" id="giveaway-prize" placeholder="${T('giveaway_prize')}" required>
+            <div class="form-row">
+              <input type="number" id="giveaway-winners" placeholder="${T('giveaway_winners')}" value="1" min="1" max="10" required>
+              <input type="datetime-local" id="giveaway-end" required>
+            </div>
+            <button type="submit" class="btn">${T('add_giveaway')}</button>
+          </form>
+        </div>
+        <div class="section">
+          <h3>${T('giveaways')}</h3>
+          <table id="giveaways-table"><thead><tr><th>${T('giveaway_prize')}</th><th>${T('giveaway_winners')}</th><th>${T('giveaway_end')}</th><th>${T('status')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+        </div>
+      `;
+    }
+
+    async function loadGiveaways() {
+      const res = await fetch(`/api/guilds/${currentGuild}/giveaways`);
+      const giveaways = await res.json();
+      const tbody = document.querySelector('#giveaways-table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = giveaways.map(g => {
+        const participants = JSON.parse(g.participants || '[]').length;
+        return `
+          <tr>
+            <td>${g.prize}</td>
+            <td>${g.winners_count}</td>
+            <td>${new Date(g.end_time).toLocaleString()}</td>
+            <td>${g.status} (${participants} Teilnehmer)</td>
+            <td><button class="btn btn-danger" onclick="deleteGiveaway(${g.id})">${T('delete')}</button></td>
+          </tr>
+        `;
+      }).join('');
+      if (giveaways.length === 0) tbody.innerHTML = `<tr><td colspan="5">${T('no_giveaways')}</td></tr>`;
+
+      const form = document.getElementById('giveaway-form');
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const prize = document.getElementById('giveaway-prize').value;
+          const winners = parseInt(document.getElementById('giveaway-winners').value) || 1;
+          const endTime = new Date(document.getElementById('giveaway-end').value).toISOString();
+          const res = await fetch(`/api/guilds/${currentGuild}/giveaways`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prize, winners_count: winners, end_time: endTime }),
+          });
+          if (res.ok) {
+            form.reset();
+            renderContent();
+          } else {
+            const data = await res.json();
+            alert(`${T('error')}: ${data.error || 'Fehler'}`);
+          }
+        });
+      }
+    }
+
+    async function deleteGiveaway(id) {
+      if (!confirm(`${T('delete')}?`)) return;
+      await fetch(`/api/guilds/${currentGuild}/giveaways/${id}`, { method: 'DELETE' });
+      renderContent();
     }
 
     function settingsView() {

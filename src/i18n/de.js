@@ -162,11 +162,16 @@ module.exports = {
   broadcast_added: 'Broadcast geplant.',
   broadcast_deleted: 'Broadcast gelöscht.',
   cmd_chatbridge: 'Richtet Discord → Ingame Chat-Bridge ein',
-  status: 'Status',
-  recurring: 'Wiederkehrend',
-  daily: 'Täglich',
-  time: 'Uhrzeit',
-  recurring_daily: 'Täglich um',
+
+  // Giveaways
+  giveaways: 'Giveaways',
+  create_giveaway: 'Giveaway erstellen',
+  add_giveaway: 'Giveaway hinzufügen',
+  giveaway_prize: 'Preis',
+  giveaway_winners: 'Gewinner',
+  giveaway_end: 'Endet am',
+  no_giveaways: 'Keine Giveaways vorhanden.',
+  cmd_giveaway: 'Giveaway erstellen oder verwalten',
 
   // Admin Panel
   broadcast: 'Broadcast',

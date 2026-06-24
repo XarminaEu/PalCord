@@ -7,6 +7,7 @@ const playerService = require('../services/playerService');
 const shopService = require('../services/shopService');
 const baseService = require('../services/baseService');
 const scheduledBroadcastService = require('../services/scheduledBroadcastService');
+const giveawayService = require('../services/giveawayService');
 const serverStatusService = require('../services/serverStatusService');
 const { isConnected } = require('../rcon/client');
 const logger = require('../logger');
@@ -388,6 +389,35 @@ router.delete('/api/guilds/:guildId/broadcasts/:id', ensureAuthenticated, async 
   const { guildId, id } = req.params;
   if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
   const ok = scheduledBroadcastService.deleteScheduledBroadcast(parseInt(id), guildId);
+  if (!ok) return res.status(404).json({ error: 'Not found' });
+  res.json({ ok: true });
+});
+
+router.get('/api/guilds/:guildId/giveaways', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
+  res.json(giveawayService.getGiveaways(guildId));
+});
+
+router.post('/api/guilds/:guildId/giveaways', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
+  const { prize, winners_count, end_time, channel_id } = req.body;
+  if (!prize || !end_time) return res.status(400).json({ error: 'Missing fields' });
+  const id = giveawayService.createGiveaway(guildId, {
+    prize,
+    winnersCount: parseInt(winners_count) || 1,
+    endTime,
+    channelId: channel_id || null,
+    createdBy: req.user.id,
+  });
+  res.json({ id });
+});
+
+router.delete('/api/guilds/:guildId/giveaways/:id', ensureAuthenticated, async (req, res) => {
+  const { guildId, id } = req.params;
+  if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
+  const ok = giveawayService.deleteGiveaway(parseInt(id), guildId);
   if (!ok) return res.status(404).json({ error: 'Not found' });
   res.json({ ok: true });
 });

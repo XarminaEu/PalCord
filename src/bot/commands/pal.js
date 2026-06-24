@@ -193,6 +193,22 @@ const data = new SlashCommandBuilder()
       .setDescription(l10n('cmd_rules')['en-US'])
       .setDescriptionLocalizations(l10n('cmd_rules'))
       .addStringOption(opt => opt.setName('set').setDescription('New rules text (admin only)').setDescriptionLocalizations({ 'de': 'Neue Regeln (nur Admin)', 'en-US': 'New rules text (admin only)' }).setRequired(false))
+  )
+  .addSubcommand(sub =>
+    sub
+      .setName('giveaway')
+      .setDescription('Giveaway erstellen oder verwalten')
+      .setDescriptionLocalizations({ 'de': 'Giveaway erstellen oder verwalten', 'en-US': 'Create or manage giveaways' })
+      .addStringOption(opt =>
+        opt.setName('action').setDescription('Action').setDescriptionLocalizations({ 'de': 'Aktion', 'en-US': 'Action' }).setRequired(true)
+          .setChoices(...l10nChoices([
+            { name: 'Create', de: 'Erstellen', en: 'Create', value: 'create' },
+            { name: 'List', de: 'Liste', en: 'List', value: 'list' },
+          ]))
+      )
+      .addStringOption(opt => opt.setName('prize').setDescription('Prize').setDescriptionLocalizations({ 'de': 'Preis', 'en-US': 'Prize' }).setRequired(false))
+      .addIntegerOption(opt => opt.setName('winners').setDescription('Number of winners').setDescriptionLocalizations({ 'de': 'Anzahl Gewinner', 'en-US': 'Number of winners' }).setMinValue(1).setMaxValue(10).setRequired(false))
+      .addIntegerOption(opt => opt.setName('minutes').setDescription('Duration in minutes').setDescriptionLocalizations({ 'de': 'Dauer in Minuten', 'en-US': 'Duration in minutes' }).setMinValue(1).setMaxValue(10080).setRequired(false))
   );
 
 module.exports = {
