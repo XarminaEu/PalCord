@@ -19,6 +19,7 @@ module.exports = {
     invitePermissions: process.env.DISCORD_INVITE_PERMISSIONS || '8',
   },
   paypal: {
+    enabled: process.env.PAYPAL_ENABLED === 'true',
     url: process.env.PAYPAL_URL || process.env.PAYPAL_ADDRESS || '',
   },
   app: {

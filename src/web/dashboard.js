@@ -256,12 +256,13 @@ router.get('/api/data/counts', (req, res) => {
 });
 
 router.get('/api/config', (req, res) => {
-  const paypalUrl = buildPaypalUrl(config.paypal.url);
+  const paypalUrl = config.paypal.enabled ? buildPaypalUrl(config.paypal.url) : null;
   res.json({
     inviteEnabled: config.discord.inviteEnabled,
     inviteUrl: config.discord.inviteEnabled && config.discord.clientId
       ? `https://discord.com/oauth2/authorize?client_id=${config.discord.clientId}&permissions=${config.discord.invitePermissions}&scope=bot%20applications.commands`
       : null,
+    paypalEnabled: config.paypal.enabled,
     paypalUrl,
   });
 });

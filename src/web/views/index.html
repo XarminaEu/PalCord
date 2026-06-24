@@ -376,7 +376,7 @@
         }
         const paypalBtn = document.getElementById('paypal-btn');
         if (paypalBtn) {
-          if (data.paypalUrl) {
+          if (data.paypalEnabled && data.paypalUrl) {
             paypalBtn.href = data.paypalUrl;
             paypalBtn.style.display = 'inline-flex';
           } else {
