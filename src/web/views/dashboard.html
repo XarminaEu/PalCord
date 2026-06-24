@@ -365,6 +365,7 @@
       const c = document.getElementById('content');
       const isAdmin = currentGuildData.isAdmin;
       const dataTab = isGlobalAdmin ? `<div class="tab ${activeTab === 'data' ? 'active' : ''}" onclick="activeTab='data';renderContent();">${T('data')}</div>` : '';
+      const systemTab = isGlobalAdmin ? `<div class="tab ${activeTab === 'system' ? 'active' : ''}" onclick="activeTab='system';renderContent();">${T('system')}</div>` : '';
       const tabs = isAdmin ? `
         <div class="tabs">
           <div class="tab ${activeTab === 'server' ? 'active' : ''}" onclick="activeTab='server';renderContent();">${T('server')}</div>
@@ -377,6 +378,7 @@
           <div class="tab ${activeTab === 'giveaways' ? 'active' : ''}" onclick="activeTab='giveaways';renderContent();">${T('giveaways')}</div>
           <div class="tab ${activeTab === 'settings' ? 'active' : ''}" onclick="activeTab='settings';renderContent();">${T('settings')}</div>
           ${dataTab}
+          ${systemTab}
         </div>
       ` : `
         <div class="tabs">
@@ -426,6 +428,7 @@
       else if (activeTab === 'giveaways') view = giveawaysView();
       else if (activeTab === 'settings') view = settingsView();
       else if (activeTab === 'data') view = dataView();
+      else if (activeTab === 'system') view = systemView();
       c.innerHTML = tabs + view;
 
       if (activeTab === 'server') loadServers();
@@ -438,6 +441,74 @@
       else if (activeTab === 'giveaways') loadGiveaways();
       else if (activeTab === 'settings') loadSettings();
       else if (activeTab === 'data') loadDataImport();
+      else if (activeTab === 'system') loadSystem();
+    }
+
+    function systemView() {
+      return `
+        <div class="section">
+          <h3>${T('system_guilds')}</h3>
+          <table id="system-guilds-table"><thead><tr><th>ID</th><th>${T('name')}</th><th>${T('owner')}</th><th>${T('status')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="section">
+          <h3>${T('system_users')}</h3>
+          <table id="system-users-table"><thead><tr><th>${T('discord_id')}</th><th>${T('guild')}</th><th>${T('role')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+        </div>
+      `;
+    }
+
+    async function loadSystem() {
+      const [guildsRes, usersRes] = await Promise.all([
+        fetch('/api/system/guilds'),
+        fetch('/api/system/users'),
+      ]);
+      const guilds = await guildsRes.json();
+      const users = await usersRes.json();
+      const guildsBody = document.querySelector('#system-guilds-table tbody');
+      if (guildsBody) {
+        guildsBody.innerHTML = guilds.map(g => `
+          <tr>
+            <td>${g.id}</td>
+            <td>${escapeHtml(g.name)}</td>
+            <td>${g.owner_id}</td>
+            <td>${g.bot_present ? 'Bot ✅' : 'Bot ❌'}</td>
+            <td><button class="btn btn-danger" onclick="deleteSystemGuild('${g.id}')">${T('delete')}</button></td>
+          </tr>
+        `).join('') || `<tr><td colspan="5">${T('no_guilds')}</td></tr>`;
+      }
+      const usersBody = document.querySelector('#system-users-table tbody');
+      if (usersBody) {
+        usersBody.innerHTML = users.map(u => `
+          <tr>
+            <td>${u.discord_id}</td>
+            <td>${escapeHtml(u.guild_name)}</td>
+            <td>${u.role}</td>
+            <td>
+              <select onchange="setSystemRole('${u.guild_id}', '${u.discord_id}', this.value)">
+                <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                <option value="supporter" ${u.role === 'supporter' ? 'selected' : ''}>Supporter</option>
+              </select>
+            </td>
+          </tr>
+        `).join('') || `<tr><td colspan="4">${T('no_users')}</td></tr>`;
+      }
+    }
+
+    async function deleteSystemGuild(guildId) {
+      if (!confirm(T('confirm_delete_guild'))) return;
+      const res = await fetch(`/api/system/guilds/${guildId}`, { method: 'DELETE' });
+      if (res.ok) loadSystem();
+      else alert(T('error'));
+    }
+
+    async function setSystemRole(guildId, discordId, role) {
+      const res = await fetch(`/api/system/users/${guildId}/${discordId}/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) alert(T('error'));
     }
 
     function serversView() {

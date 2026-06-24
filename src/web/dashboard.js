@@ -270,6 +270,44 @@ router.get('/api/data/counts', (req, res) => {
   res.json(dataImportService.getCounts());
 });
 
+router.get('/api/system/guilds', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  const botGuildIds = getBotGuildIds();
+  const guilds = db.prepare('SELECT * FROM guilds ORDER BY created_at DESC').all();
+  res.json(guilds.map(g => ({ ...g, bot_present: botGuildIds.has(g.id) })));
+});
+
+router.get('/api/system/users', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  const users = db.prepare(`
+    SELECT u.*, g.name as guild_name
+    FROM guild_users u
+    JOIN guilds g ON g.id = u.guild_id
+    ORDER BY u.created_at DESC
+  `).all();
+  res.json(users);
+});
+
+router.post('/api/system/users/:guildId/:discordId/role', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  const { guildId, discordId } = req.params;
+  const { role } = req.body;
+  if (!['user', 'admin', 'supporter'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+  guildService.setUserRole(guildId, discordId, role);
+  res.json({ ok: true });
+});
+
+router.delete('/api/system/guilds/:guildId', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  const { guildId } = req.params;
+  db.prepare('DELETE FROM guild_servers WHERE guild_id = ?').run(guildId);
+  db.prepare('DELETE FROM guild_users WHERE guild_id = ?').run(guildId);
+  db.prepare('DELETE FROM guilds WHERE id = ?').run(guildId);
+  res.json({ ok: true });
+});
+
 router.get('/api/config', (req, res) => {
   const paypalUrl = config.paypal.enabled ? buildPaypalUrl(config.paypal.url) : null;
   res.json({
