@@ -302,6 +302,7 @@
     <a id="footer-imprint" onclick="openModal('/imprint')" style="color:var(--muted);text-decoration:none;cursor:pointer;">Impressum</a> &bull;
     <a id="footer-terms" onclick="openModal('/terms')" style="color:var(--muted);text-decoration:none;cursor:pointer;">Nutzungsbedingungen</a> &bull;
     <a id="footer-privacy" onclick="openModal('/privacy')" style="color:var(--muted);text-decoration:none;cursor:pointer;">Datenschutz</a>
+    <span id="footer-version" style="margin-left:0.5rem;"></span>
   </footer>
 
   <script src="/static/i18n-frontend.js"></script>
@@ -359,6 +360,12 @@
       const adminDropdown = document.getElementById('admin-dropdown');
       if (adminDropdown) adminDropdown.style.display = isGlobalAdmin ? 'inline-block' : 'none';
       document.getElementById('user-name').textContent = data.user.username;
+      try {
+        const vRes = await fetch('/api/version');
+        const vData = await vRes.json();
+        const vEl = document.getElementById('footer-version');
+        if (vEl) vEl.textContent = `v${vData.version}`;
+      } catch (e) {}
       const avatar = data.user.avatar
         ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
         : 'https://cdn.discordapp.com/embed/avatars/0.png';

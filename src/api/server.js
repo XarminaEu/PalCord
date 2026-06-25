@@ -1,4 +1,5 @@
 const path = require('path');
+const packageJson = require('../../package.json');
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -20,6 +21,10 @@ app.use('/static', express.static(path.join(__dirname, '..', 'web', 'views')));
 app.get('/favicon.ico', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');
   res.sendFile(path.join(__dirname, '..', 'web', 'views', 'favicon.ico'));
+});
+
+app.get('/api/version', (req, res) => {
+  res.json({ version: packageJson.version });
 });
 
 app.post('/api/copyright-check', (req, res) => {

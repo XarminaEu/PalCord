@@ -384,6 +384,7 @@
       <a style="color:var(--muted);" id="footer-imprint" onclick="openModal('/imprint')">Impressum</a> &bull;
       <a style="color:var(--muted);" id="footer-terms" onclick="openModal('/terms')">Nutzungsbedingungen</a> &bull;
       <a style="color:var(--muted);" id="footer-privacy" onclick="openModal('/privacy')">Datenschutz</a>
+      <span id="footer-version" style="color:var(--muted);margin-left:0.5rem;"></span>
     </div>
   </div>
   <script>
@@ -410,6 +411,10 @@
             paypalBtn.style.display = 'none';
           }
         }
+        const versionRes = await fetch('/api/version');
+        const versionData = await versionRes.json();
+        const versionEl = document.getElementById('footer-version');
+        if (versionEl) versionEl.textContent = `v${versionData.version}`;
       } catch (err) {
         const inviteBtn = document.getElementById('invite-btn');
         if (inviteBtn) inviteBtn.style.display = 'none';

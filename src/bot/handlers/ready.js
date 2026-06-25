@@ -3,11 +3,19 @@ const guildService = require('../../services/guildService');
 const logger = require('../../logger');
 const path = require('path');
 const fs = require('fs');
+const packageJson = require('../../../package.json');
 const { startStatusUpdates } = require('../embeds/serverEmbed');
 const { startBasesEmbedUpdate } = require('../embeds/baseEmbed');
 
 module.exports = async function readyHandler(client) {
   logger.info(`Bot logged in as ${client.user.tag}`);
+
+  try {
+    await client.user.setActivity(`PalCord v${packageJson.version}`, { type: 0 });
+    logger.info(`Bot activity set to PalCord v${packageJson.version}`);
+  } catch (err) {
+    logger.warn(`Failed to set bot activity: ${err.message}`);
+  }
 
   const logoPath = path.join(__dirname, '..', '..', '..', 'PalCord_logo_echt_transparent.png');
   if (fs.existsSync(logoPath)) {
