@@ -1713,7 +1713,7 @@
       populateSelect('admin_role_id', roles, settings.admin_role_id);
       document.getElementById('rules').value = settings.rules || '';
       const publicData = await publicRes.json();
-      document.getElementById('public_server').checked = publicData.public;
+      document.getElementById('public_server').checked = publicData.isPublic;
 
       document.getElementById('settings-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1733,7 +1733,7 @@
         const publicRes = await fetch(`/api/guilds/${currentGuild}/public`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ public: document.getElementById('public_server').checked }),
+          body: JSON.stringify({ isPublic: document.getElementById('public_server').checked }),
         });
         if (res.ok && publicRes.ok) {
           alert(T('settings_saved'));

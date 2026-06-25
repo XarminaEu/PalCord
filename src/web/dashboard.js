@@ -411,14 +411,14 @@ router.get('/api/guilds/:guildId/public', ensureAuthenticated, async (req, res) 
   const { guildId } = req.params;
   if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
   const guild = guildService.getGuild(guildId);
-  res.json({ public: guild ? guild.public === 1 : false });
+  res.json({ isPublic: guild ? guild.public === 1 : false });
 });
 
 router.post('/api/guilds/:guildId/public', ensureAuthenticated, async (req, res) => {
   const { guildId } = req.params;
   if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
-  const { public } = req.body;
-  guildService.setGuildPublic(guildId, public);
+  const { isPublic } = req.body;
+  guildService.setGuildPublic(guildId, isPublic);
   res.json({ ok: true });
 });
 
