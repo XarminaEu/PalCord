@@ -1678,6 +1678,10 @@
             <select id="admin_role_id"><option value="">—</option></select>
             <label>${T('rules_config')}</label>
             <textarea id="rules" rows="6" placeholder="Server-Regeln..."></textarea>
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" id="public_server"> ${T('public_server')}
+            </label>
+            <p style="color:var(--muted);font-size:0.85rem;margin:-0.5rem 0 0.5rem;">${T('public_server_help')}</p>
             <button type="submit" class="btn">${T('save')}</button>
           </form>
         </div>
@@ -1685,10 +1689,11 @@
     }
 
     async function loadSettings() {
-      const [settingsRes, channelsRes, rolesRes] = await Promise.all([
+      const [settingsRes, channelsRes, rolesRes, publicRes] = await Promise.all([
         fetch(`/api/guilds/${currentGuild}/settings`),
         fetch(`/api/guilds/${currentGuild}/channels`),
         fetch(`/api/guilds/${currentGuild}/roles`),
+        fetch(`/api/guilds/${currentGuild}/public`),
       ]);
       const settings = await settingsRes.json();
       const channels = await channelsRes.json();
@@ -1706,6 +1711,8 @@
       populateSelect('auto_role_id', roles, settings.auto_role_id);
       populateSelect('admin_role_id', roles, settings.admin_role_id);
       document.getElementById('rules').value = settings.rules || '';
+      const publicData = await publicRes.json();
+      document.getElementById('public_server').checked = publicData.public;
 
       document.getElementById('settings-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1722,7 +1729,12 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
-        if (res.ok) {
+        const publicRes = await fetch(`/api/guilds/${currentGuild}/public`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ public: document.getElementById('public_server').checked }),
+        });
+        if (res.ok && publicRes.ok) {
           alert(T('settings_saved'));
         } else {
           alert(T('error'));

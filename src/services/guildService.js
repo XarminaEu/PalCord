@@ -179,6 +179,24 @@ function isUserBanned(guildId, discordId) {
   return row && row.banned === 1;
 }
 
+function getPublicGuilds() {
+  return db.prepare('SELECT id, name, owner_id, language, bumps, created_at FROM guilds WHERE public = 1 AND banned = 0 ORDER BY bumps DESC, created_at DESC').all();
+}
+
+function getGuildPublic(guildId) {
+  return db.prepare('SELECT id, name, owner_id, language, bumps, created_at FROM guilds WHERE id = ? AND public = 1 AND banned = 0').get(guildId);
+}
+
+function setGuildPublic(guildId, isPublic) {
+  db.prepare('UPDATE guilds SET public = ? WHERE id = ?').run(isPublic ? 1 : 0, guildId);
+}
+
+function bumpGuild(guildId) {
+  db.prepare('UPDATE guilds SET bumps = bumps + 1 WHERE id = ? AND public = 1 AND banned = 0').run(guildId);
+  const row = db.prepare('SELECT bumps FROM guilds WHERE id = ?').get(guildId);
+  return row ? row.bumps : 0;
+}
+
 function getGuildUsers(guildId) {
   return db.prepare('SELECT * FROM guild_users WHERE guild_id = ?').all(guildId);
 }
@@ -210,5 +228,9 @@ module.exports = {
   setUserBanned,
   isGuildBanned,
   isUserBanned,
+  getPublicGuilds,
+  getGuildPublic,
+  setGuildPublic,
+  bumpGuild,
   getGuildUsers,
 };

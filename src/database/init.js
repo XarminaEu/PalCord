@@ -122,6 +122,8 @@ function init() {
   addColumnIfNotExists('guilds', 'language', 'TEXT DEFAULT \'de\'');
   addColumnIfNotExists('guilds', 'banned', 'INTEGER DEFAULT 0');
   addColumnIfNotExists('guild_users', 'banned', 'INTEGER DEFAULT 0');
+  addColumnIfNotExists('guilds', 'public', 'INTEGER DEFAULT 0');
+  addColumnIfNotExists('guilds', 'bumps', 'INTEGER DEFAULT 0');
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS player_bases (

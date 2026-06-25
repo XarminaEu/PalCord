@@ -59,6 +59,14 @@ router.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
+router.get('/public', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'public.html'));
+});
+
+router.get('/public/:guildId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'public.html'));
+});
+
 router.get('/terms', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'terms.html'));
 });
@@ -399,6 +407,21 @@ router.get('/api/guilds/:guildId/rules', ensureAuthenticated, async (req, res) =
   res.json({ rules });
 });
 
+router.get('/api/guilds/:guildId/public', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
+  const guild = guildService.getGuild(guildId);
+  res.json({ public: guild ? guild.public === 1 : false });
+});
+
+router.post('/api/guilds/:guildId/public', ensureAuthenticated, async (req, res) => {
+  const { guildId } = req.params;
+  if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
+  const { public } = req.body;
+  guildService.setGuildPublic(guildId, public);
+  res.json({ ok: true });
+});
+
 router.post('/api/guilds/:guildId/settings', ensureAuthenticated, async (req, res) => {
   const { guildId } = req.params;
   if (!(await isGuildAdmin(req, guildId))) return res.status(403).json({ error: 'Forbidden' });
@@ -715,6 +738,53 @@ router.post('/api/guilds/:guildId/admin/whitelist', ensureAuthenticated, async (
     return res.status(400).json({ error: 'Invalid action' });
   }
   res.json(result);
+});
+
+router.get('/api/public/guilds', (req, res) => {
+  res.json(guildService.getPublicGuilds());
+});
+
+router.get('/api/public/guilds/:guildId', (req, res) => {
+  const { guildId } = req.params;
+  const guild = guildService.getGuildPublic(guildId);
+  if (!guild) return res.status(404).json({ error: 'Not found' });
+  res.json(guild);
+});
+
+router.get('/api/public/guilds/:guildId/shop', (req, res) => {
+  const { guildId } = req.params;
+  const guild = guildService.getGuildPublic(guildId);
+  if (!guild) return res.status(404).json({ error: 'Not found' });
+  res.json(shopService.getShopItems(guildId));
+});
+
+router.get('/api/public/guilds/:guildId/rules', (req, res) => {
+  const { guildId } = req.params;
+  const guild = guildService.getGuildPublic(guildId);
+  if (!guild) return res.status(404).json({ error: 'Not found' });
+  res.json({ rules: guildService.getServerConfig(guildId, 'rules') || '' });
+});
+
+router.get('/api/public/guilds/:guildId/status', async (req, res) => {
+  const { guildId } = req.params;
+  const guild = guildService.getGuildPublic(guildId);
+  if (!guild) return res.status(404).json({ error: 'Not found' });
+  const server = guildService.getActiveServer(guildId);
+  if (!server) return res.status(404).json({ error: 'No active server' });
+  try {
+    const status = await serverStatusService.getStatus(guildId, server);
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/api/public/guilds/:guildId/bump', (req, res) => {
+  const { guildId } = req.params;
+  const guild = guildService.getGuildPublic(guildId);
+  if (!guild) return res.status(404).json({ error: 'Not found' });
+  const bumps = guildService.bumpGuild(guildId);
+  res.json({ ok: true, bumps });
 });
 
 module.exports = router;
