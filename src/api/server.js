@@ -17,6 +17,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use('/static', express.static(path.join(__dirname, '..', 'web', 'views')));
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'web', 'views', 'favicon.ico'));
+});
 
 app.post('/api/copyright-check', (req, res) => {
   const { api_key, program, copyright } = req.body;
