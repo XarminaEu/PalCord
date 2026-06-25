@@ -39,12 +39,14 @@ function getBotGuildIds() {
 }
 
 function canAccessGuild(req, guildId) {
-  if (isGlobalAdmin(req)) return true;
+  if (isGlobalAdmin(req)) return !guildService.isGuildBanned(guildId);
   if (!req.user || !req.user.guilds) return false;
+  if (guildService.isGuildBanned(guildId)) return false;
   return req.user.guilds.some(g => g.id === guildId);
 }
 
 async function isGuildAdmin(req, guildId) {
+  if (guildService.isGuildBanned(guildId) || guildService.isUserBanned(guildId, req.user.id)) return false;
   if (isGlobalAdmin(req)) return true;
   if (guildService.isGuildAdmin(guildId, req.user.id)) return true;
   const ownerId = guildService.getGuildOwnerId(guildId);
@@ -296,6 +298,22 @@ router.post('/api/system/users/:guildId/:discordId/role', ensureAuthenticated, (
     return res.status(400).json({ error: 'Invalid role' });
   }
   guildService.setUserRole(guildId, discordId, role);
+  res.json({ ok: true });
+});
+
+router.post('/api/system/guilds/:guildId/ban', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  const { guildId } = req.params;
+  const { banned } = req.body;
+  guildService.setGuildBanned(guildId, banned);
+  res.json({ ok: true });
+});
+
+router.post('/api/system/users/:guildId/:discordId/ban', ensureAuthenticated, (req, res) => {
+  if (!isGlobalAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  const { guildId, discordId } = req.params;
+  const { banned } = req.body;
+  guildService.setUserBanned(guildId, discordId, banned);
   res.json({ ok: true });
 });
 

@@ -159,6 +159,26 @@ function setUserRole(guildId, discordId, role) {
   stmt.run(role, guildId, discordId);
 }
 
+function setGuildBanned(guildId, banned) {
+  const stmt = db.prepare('UPDATE guilds SET banned = ? WHERE id = ?');
+  stmt.run(banned ? 1 : 0, guildId);
+}
+
+function setUserBanned(guildId, discordId, banned) {
+  const stmt = db.prepare('UPDATE guild_users SET banned = ? WHERE guild_id = ? AND discord_id = ?');
+  stmt.run(banned ? 1 : 0, guildId, discordId);
+}
+
+function isGuildBanned(guildId) {
+  const row = db.prepare('SELECT banned FROM guilds WHERE id = ?').get(guildId);
+  return row && row.banned === 1;
+}
+
+function isUserBanned(guildId, discordId) {
+  const row = db.prepare('SELECT banned FROM guild_users WHERE guild_id = ? AND discord_id = ?').get(guildId, discordId);
+  return row && row.banned === 1;
+}
+
 function getGuildUsers(guildId) {
   return db.prepare('SELECT * FROM guild_users WHERE guild_id = ?').all(guildId);
 }
@@ -186,5 +206,9 @@ module.exports = {
   getServerConfig,
   setServerConfig,
   setUserRole,
+  setGuildBanned,
+  setUserBanned,
+  isGuildBanned,
+  isUserBanned,
   getGuildUsers,
 };

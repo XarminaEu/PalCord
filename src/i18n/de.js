@@ -154,6 +154,7 @@ module.exports = {
   error_server_offline: 'Server ist offline oder nicht erreichbar.',
   error_no_players: 'Keine Spieler online.',
   cmd_guild_only: 'Dieser Befehl funktioniert nur auf einem Discord-Server.',
+  cmd_banned: 'Du oder dieser Server sind gesperrt.',
   cmd_language_set: 'Sprache auf {{language}} gesetzt.',
 
   // OAuth
@@ -333,6 +334,10 @@ module.exports = {
   no_guilds: 'Keine Server vorhanden.',
   no_users: 'Keine Benutzer vorhanden.',
   confirm_delete_guild: 'Server wirklich löschen? Alle zugehörigen Daten werden entfernt.',
+  banned: 'Gesperrt',
+  ban: 'Sperren',
+  unban: 'Entsperren',
+  error: 'Fehler aufgetreten.',
   import_data: 'Daten importieren',
   import_items: 'Items importieren',
   import_pals: 'Pals importieren',

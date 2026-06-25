@@ -177,6 +177,43 @@
     .tab:hover { background: rgba(255,255,255,0.05); color: var(--text); }
     .tab.active { color: var(--text); background: rgba(88, 101, 242, 0.2); border-color: rgba(88, 101, 242, 0.4); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-toggle {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .dropdown-toggle:hover { background: rgba(255,255,255,0.1); }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 110%;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-width: 180px;
+      box-shadow: var(--shadow);
+      z-index: 200;
+      overflow: hidden;
+    }
+    .dropdown.open .dropdown-menu { display: block; }
+    .dropdown-item {
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .dropdown-item:last-child { border-bottom: none; }
+    .dropdown-item:hover { background: rgba(88,101,242,0.2); }
     .status-badge { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; }
     .status-online { color: var(--accent-2); }
     .status-offline { color: #ed4245; }
@@ -236,6 +273,13 @@
       <span id="user-name"></span>
       <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
       <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      <div class="dropdown" id="admin-dropdown" style="display:none;">
+        <button class="dropdown-toggle" id="admin-dropdown-toggle" onclick="toggleAdminDropdown()">Admin ▼</button>
+        <div class="dropdown-menu">
+          <div class="dropdown-item" id="admin-dropdown-system" onclick="openSystem('system')">System</div>
+          <div class="dropdown-item" id="admin-dropdown-data" onclick="openSystem('data')">Data</div>
+        </div>
+      </div>
       <img id="user-avatar" src="" alt="Avatar">
       <a href="/logout" class="logout" id="logout-link">Logout</a>
     </div>
@@ -276,6 +320,8 @@
       document.getElementById('footer-imprint').textContent = T('imprint_title') || 'Impressum';
       document.getElementById('footer-terms').textContent = T('terms_title') || 'Nutzungsbedingungen';
       document.getElementById('footer-privacy').textContent = T('privacy_title') || 'Datenschutz';
+      document.getElementById('admin-dropdown-system').textContent = T('system') || 'System';
+      document.getElementById('admin-dropdown-data').textContent = T('data') || 'Data';
       const welcome = document.getElementById('content');
       if (welcome && !currentGuild) {
         welcome.innerHTML = `
@@ -287,11 +333,30 @@
       }
     };
 
+    function toggleAdminDropdown() {
+      document.getElementById('admin-dropdown').classList.toggle('open');
+    }
+
+    function openSystem(tab) {
+      activeTab = tab;
+      currentGuild = null;
+      currentGuildData = null;
+      document.getElementById('admin-dropdown').classList.remove('open');
+      renderContent();
+    }
+
+    window.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('admin-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) dropdown.classList.remove('open');
+    });
+
     async function loadMe() {
       const res = await fetch('/api/me');
       const data = await res.json();
       currentUser = data.user;
       isGlobalAdmin = data.isGlobalAdmin;
+      const adminDropdown = document.getElementById('admin-dropdown');
+      if (adminDropdown) adminDropdown.style.display = isGlobalAdmin ? 'inline-block' : 'none';
       document.getElementById('user-name').textContent = data.user.username;
       const avatar = data.user.avatar
         ? `https://cdn.discordapp.com/avatars/${data.user.id}/${data.user.avatar}.png`
@@ -364,8 +429,6 @@
     function renderContent() {
       const c = document.getElementById('content');
       const isAdmin = currentGuildData.isAdmin;
-      const dataTab = isGlobalAdmin ? `<div class="tab ${activeTab === 'data' ? 'active' : ''}" onclick="activeTab='data';renderContent();">${T('data')}</div>` : '';
-      const systemTab = isGlobalAdmin ? `<div class="tab ${activeTab === 'system' ? 'active' : ''}" onclick="activeTab='system';renderContent();">${T('system')}</div>` : '';
       const tabs = isAdmin ? `
         <div class="tabs">
           <div class="tab ${activeTab === 'server' ? 'active' : ''}" onclick="activeTab='server';renderContent();">${T('server')}</div>
@@ -377,8 +440,6 @@
           <div class="tab ${activeTab === 'admin' ? 'active' : ''}" onclick="activeTab='admin';renderContent();">${T('admin')}</div>
           <div class="tab ${activeTab === 'giveaways' ? 'active' : ''}" onclick="activeTab='giveaways';renderContent();">${T('giveaways')}</div>
           <div class="tab ${activeTab === 'settings' ? 'active' : ''}" onclick="activeTab='settings';renderContent();">${T('settings')}</div>
-          ${dataTab}
-          ${systemTab}
         </div>
       ` : `
         <div class="tabs">
@@ -448,11 +509,11 @@
       return `
         <div class="section">
           <h3>${T('system_guilds')}</h3>
-          <table id="system-guilds-table"><thead><tr><th>ID</th><th>${T('name')}</th><th>${T('owner')}</th><th>${T('status')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+          <table id="system-guilds-table"><thead><tr><th>ID</th><th>${T('name')}</th><th>${T('owner')}</th><th>${T('status')}</th><th>${T('banned')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
         </div>
         <div class="section">
           <h3>${T('system_users')}</h3>
-          <table id="system-users-table"><thead><tr><th>${T('discord_id')}</th><th>${T('guild')}</th><th>${T('role')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
+          <table id="system-users-table"><thead><tr><th>${T('discord_id')}</th><th>${T('guild')}</th><th>${T('role')}</th><th>${T('banned')}</th><th>${T('action')}</th></tr></thead><tbody></tbody></table>
         </div>
       `;
     }
@@ -472,9 +533,13 @@
             <td>${escapeHtml(g.name)}</td>
             <td>${g.owner_id}</td>
             <td>${g.bot_present ? 'Bot ✅' : 'Bot ❌'}</td>
-            <td><button class="btn btn-danger" onclick="deleteSystemGuild('${g.id}')">${T('delete')}</button></td>
+            <td>${g.banned ? 'Ja' : 'Nein'}</td>
+            <td>
+              <button class="btn ${g.banned ? 'btn-success' : 'btn-danger'}" onclick="setSystemGuildBan('${g.id}', ${!g.banned})">${g.banned ? T('unban') : T('ban')}</button>
+              <button class="btn btn-danger" onclick="deleteSystemGuild('${g.id}')">${T('delete')}</button>
+            </td>
           </tr>
-        `).join('') || `<tr><td colspan="5">${T('no_guilds')}</td></tr>`;
+        `).join('') || `<tr><td colspan="6">${T('no_guilds')}</td></tr>`;
       }
       const usersBody = document.querySelector('#system-users-table tbody');
       if (usersBody) {
@@ -482,7 +547,6 @@
           <tr>
             <td>${u.discord_id}</td>
             <td>${escapeHtml(u.guild_name)}</td>
-            <td>${u.role}</td>
             <td>
               <select onchange="setSystemRole('${u.guild_id}', '${u.discord_id}', this.value)">
                 <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
@@ -490,8 +554,12 @@
                 <option value="supporter" ${u.role === 'supporter' ? 'selected' : ''}>Supporter</option>
               </select>
             </td>
+            <td>${u.banned ? 'Ja' : 'Nein'}</td>
+            <td>
+              <button class="btn ${u.banned ? 'btn-success' : 'btn-danger'}" onclick="setSystemUserBan('${u.guild_id}', '${u.discord_id}', ${!u.banned})">${u.banned ? T('unban') : T('ban')}</button>
+            </td>
           </tr>
-        `).join('') || `<tr><td colspan="4">${T('no_users')}</td></tr>`;
+        `).join('') || `<tr><td colspan="5">${T('no_users')}</td></tr>`;
       }
     }
 
@@ -509,6 +577,26 @@
         body: JSON.stringify({ role }),
       });
       if (!res.ok) alert(T('error'));
+    }
+
+    async function setSystemGuildBan(guildId, banned) {
+      const res = await fetch(`/api/system/guilds/${guildId}/ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ banned }),
+      });
+      if (res.ok) loadSystem();
+      else alert(T('error'));
+    }
+
+    async function setSystemUserBan(guildId, discordId, banned) {
+      const res = await fetch(`/api/system/users/${guildId}/${discordId}/ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ banned }),
+      });
+      if (res.ok) loadSystem();
+      else alert(T('error'));
     }
 
     function serversView() {

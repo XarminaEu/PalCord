@@ -28,12 +28,16 @@ passport.use(new DiscordStrategy({
     if (Array.isArray(profile.guilds) && profile.guilds.length > 0) {
       logger.info(`First guild: ${JSON.stringify(profile.guilds[0])}`);
     }
+    const allowedGuilds = (profile.guilds || []).filter(g => !guildService.isGuildBanned(g.id));
     const user = {
       id: profile.id,
       username: profile.username,
       avatar: profile.avatar,
-      guilds: profile.guilds || [],
+      guilds: allowedGuilds,
     };
+    if (user.id !== config.globalAdminId && allowedGuilds.length === 0) {
+      return done(null, false, { message: 'Account or servers are banned.' });
+    }
     logger.info(`Discord OAuth login: ${user.username} (${user.id}), guilds: ${user.guilds.length}`);
     return done(null, user);
   } catch (err) {

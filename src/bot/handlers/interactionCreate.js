@@ -1117,6 +1117,16 @@ async function handleAutocomplete(interaction) {
 
 module.exports = async function interactionCreateHandler(client, interaction) {
   try {
+    const guildId = interaction.guildId || interaction.guild?.id;
+    if (guildId && guildService.isGuildBanned(guildId)) {
+      return;
+    }
+    if (guildId && guildService.isUserBanned(guildId, interaction.user.id)) {
+      if (interaction.isRepliable()) {
+        await interaction.reply({ content: '❌ ' + __('cmd_banned'), ephemeral: true }).catch(() => {});
+      }
+      return;
+    }
     if (interaction.isAutocomplete()) {
       return await handleAutocomplete(interaction);
     }

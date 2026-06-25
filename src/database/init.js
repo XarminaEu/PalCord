@@ -120,6 +120,8 @@ function init() {
   addColumnIfNotExists('guild_servers', 'rest_api_username', 'TEXT DEFAULT \'admin\'');
   addColumnIfNotExists('players', 'platform', 'TEXT DEFAULT \'unknown\'');
   addColumnIfNotExists('guilds', 'language', 'TEXT DEFAULT \'de\'');
+  addColumnIfNotExists('guilds', 'banned', 'INTEGER DEFAULT 0');
+  addColumnIfNotExists('guild_users', 'banned', 'INTEGER DEFAULT 0');
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS player_bases (

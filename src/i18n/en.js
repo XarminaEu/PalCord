@@ -154,6 +154,7 @@ module.exports = {
   error_server_offline: 'Server is offline or unreachable.',
   error_no_players: 'No players online.',
   cmd_guild_only: 'This command only works on a Discord server.',
+  cmd_banned: 'You or this server are banned.',
   cmd_language_set: 'Language set to {{language}}.',
 
   // OAuth
@@ -333,6 +334,10 @@ module.exports = {
   no_guilds: 'No servers available.',
   no_users: 'No users available.',
   confirm_delete_guild: 'Really delete this server? All related data will be removed.',
+  banned: 'Banned',
+  ban: 'Ban',
+  unban: 'Unban',
+  error: 'An error occurred.',
   import_data: 'Import Data',
   import_items: 'Import Items',
   import_pals: 'Import Pals',
