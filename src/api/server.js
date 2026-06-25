@@ -18,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use('/static', express.static(path.join(__dirname, '..', 'web', 'views')));
 app.get('/favicon.ico', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400');
   res.sendFile(path.join(__dirname, '..', 'web', 'views', 'favicon.ico'));
 });
 
