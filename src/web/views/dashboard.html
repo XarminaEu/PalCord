@@ -1689,6 +1689,7 @@
     }
 
     async function loadSettings() {
+      await fetch(`/api/guilds/${currentGuild}/register`, { method: 'POST' });
       const [settingsRes, channelsRes, rolesRes, publicRes] = await Promise.all([
         fetch(`/api/guilds/${currentGuild}/settings`),
         fetch(`/api/guilds/${currentGuild}/channels`),
